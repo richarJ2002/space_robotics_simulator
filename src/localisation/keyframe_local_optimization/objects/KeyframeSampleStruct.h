@@ -49,7 +49,7 @@ struct KeyframeSample
      * @frame       odom_frame (default <system>/startup_fixed).
      * @units       Metres.
      */
-    Eigen::Vector3d position_Fix_m{Eigen::Vector3d::Zero()};
+    Eigen::Vector3d position_fixed_m{Eigen::Vector3d::Zero()};
 
     /*!
      * @brief       Keyframe orientation, odom frame to body frame.
@@ -57,8 +57,7 @@ struct KeyframeSample
      * @frame       Fix Frame to Body Frame.
      * @units       N/A
      */
-    Eigen::Quaterniond quaternionOrientation_FixToBod{
-        Eigen::Quaterniond::Identity()};
+    Eigen::Quaterniond orientation_fixedToBody{Eigen::Quaterniond::Identity()};
 
     /*!
      * @brief       Pose covariance, translation then rotation.
@@ -75,7 +74,7 @@ struct KeyframeSample
      * @frame       Body Frame.
      * @units       Metres per second.
      */
-    Eigen::Vector3d twistLinear_Bod_mPs{Eigen::Vector3d::Zero()};
+    Eigen::Vector3d twistLinear_body_mPs{Eigen::Vector3d::Zero()};
 
     /*!
      * @brief       Body-frame angular twist carried for republication.
@@ -83,7 +82,7 @@ struct KeyframeSample
      * @frame       Body Frame.
      * @units       Radians per second.
      */
-    Eigen::Vector3d twistAngular_Bod_radPs{Eigen::Vector3d::Zero()};
+    Eigen::Vector3d twistAngular_body_radPs{Eigen::Vector3d::Zero()};
 
     /*!
      * @brief       Observed 3-D points in the keyframe-local frame.
