@@ -44,12 +44,18 @@ target_include_directories(test_startup_fixed_frame PRIVATE
 target_link_libraries(test_startup_fixed_frame ground_truth)
 ament_target_dependencies(test_startup_fixed_frame tf2)
 
-ament_add_gtest(test_inertial_gravity localisation/inertial_odometry/test_inertial_gravity.cpp)
+ament_add_gtest(test_inertial_gravity localisation/inertial_odometry_node/test_inertial_gravity.cpp)
 target_compile_features(test_inertial_gravity PUBLIC cxx_std_17)
 target_include_directories(test_inertial_gravity PRIVATE
-  ${PROJECT_SOURCE_DIR}/src/localisation/inertial_odometry)
+  ${PROJECT_SOURCE_DIR}/src/localisation/inertial_odometry_node)
 target_link_libraries(test_inertial_gravity inertial_odometry)
 ament_target_dependencies(test_inertial_gravity tf2)
+
+ament_add_gtest(test_inertial_averager localisation/inertial_averaging/test_inertial_averager.cpp)
+target_compile_features(test_inertial_averager PUBLIC cxx_std_17)
+target_include_directories(test_inertial_averager PRIVATE
+  ${PROJECT_SOURCE_DIR}/src/localisation/inertial_averaging)
+target_link_libraries(test_inertial_averager inertial_averaging)
 
 ament_add_gtest(test_visual_keyframe_policy localisation/visual_odometry/test_visual_keyframe_policy.cpp)
 target_compile_features(test_visual_keyframe_policy PUBLIC cxx_std_17)
@@ -65,9 +71,19 @@ ament_add_gtest(test_optical_flow_tracker localisation/visual_odometry/feature_t
 target_compile_features(test_optical_flow_tracker PUBLIC cxx_std_17)
 target_link_libraries(test_optical_flow_tracker alpha_feature_tracking)
 
+ament_add_gtest(test_orb_detector localisation/visual_odometry/feature_tracking/test_orb_detector.cpp)
+target_compile_features(test_orb_detector PUBLIC cxx_std_17)
+target_link_libraries(test_orb_detector alpha_orb_feature_tracking)
+
 ament_add_gtest(test_wheel_solve localisation/wheel_odometry/test_wheel_solve.cpp)
 target_compile_features(test_wheel_solve PUBLIC cxx_std_17)
 target_link_libraries(test_wheel_solve wheel_odometry)
+
+ament_add_gtest(test_keyframe_ba localisation/keyframe_local_optimization/test_keyframe_ba.cpp)
+target_compile_features(test_keyframe_ba PUBLIC cxx_std_17)
+target_include_directories(test_keyframe_ba PRIVATE
+  ${PROJECT_SOURCE_DIR}/src/localisation/keyframe_local_optimization)
+target_link_libraries(test_keyframe_ba keyframe_local_optimization Eigen3::Eigen)
 
 # ------------------------------------------------------------
 # 4. Systems/Alpha
@@ -76,6 +92,14 @@ ament_add_gtest(test_kalman_math systems/alpha/alpha_localisation/alpha_kalman_f
 target_compile_features(test_kalman_math PUBLIC cxx_std_17)
 target_link_libraries(test_kalman_math
   alpha_kalman_filter
+  ekf_continuous_kalman_filter
+  Eigen3::Eigen)
+
+ament_add_gtest(test_ukf_math systems/alpha/alpha_localisation/alpha_ukf_filter/test_ukf_math.cpp)
+target_compile_features(test_ukf_math PUBLIC cxx_std_17)
+target_link_libraries(test_ukf_math
+  alpha_ukf_filter
+  ukf_continuous_kalman_filter
   ekf_continuous_kalman_filter
   Eigen3::Eigen)
 
