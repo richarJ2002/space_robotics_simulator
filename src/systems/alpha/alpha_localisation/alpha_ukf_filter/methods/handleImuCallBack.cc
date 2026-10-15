@@ -116,7 +116,24 @@ void AlphaUkfFilterNode::handleImuCallBack(
         return;
     }
 
-    /* Propagate the filter to this sample's timestamp. */
+    /* Propagate the filter to this sample's timestamp. A sample at
+     * or behind the current epoch carries no new information: a
+     * measurement already advanced the epoch past it (routine
+     * transport jitter between the 50 Hz IMU and wheel streams).
+     * Coast like the EKF instead of predicting backwards, which
+     * predictTo() would reject as INVALID_INPUT. */
+    constexpr double TIMESTAMP_TOLERANCE_S = 1.0e-9;
+    if (sample.timestamp_s <= stateTimestamp_s + TIMESTAMP_TOLERANCE_S)
+    {
+        static constexpr Eigen::Index GYROSCOPE_BIAS_INDEX =
+            static_cast<Eigen::Index>(
+                UkfStateIndex::UKF_STATE_INDEX_GYROSCOPE_BIAS_X);
+        latestAngularVelocity_body_radPs =
+            sample.angularVelocity_body_radPs -
+            filter.getState().segment<3>(GYROSCOPE_BIAS_INDEX);
+        finishDiagnostics();
+        return;
+    }
     const FilterStatus predictStatus = predictTo(sample.timestamp_s, true);
     if (predictStatus != FilterStatus::UKF_STATUS_SUCCESS)
     {
