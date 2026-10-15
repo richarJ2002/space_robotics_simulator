@@ -37,3 +37,29 @@ LocCam / annotated-feature image topics. Leave it off for normal runs:
 stereo images at full camera rate add multiple gigabytes to a run.
 Without it the visual-odometry page still renders every other section
 and says how to recapture with images.
+
+## Relative-pose error (RPE)
+
+Complement to the absolute (ATE) error on each subsystem page:
+fixed-window drift per interval instead of accumulated offset.
+
+- Definition: for each estimator sample, the first later sample at
+  least one window ahead forms a pair; translational RPE is
+  `|estimate displacement − ground-truth displacement|` across the
+  pair (metres), rotational RPE is the geodesic angle between the two
+  relative rotations (degrees, double-cover safe, so pairs straddling
+  the ±π yaw branch cut stay small when both legs agree physically).
+  A constant position/attitude offset cancels exactly. Ground truth is
+  interpolated to the estimator's own clock first, so 50 Hz filters
+  and 2 Hz visual producers score on the same footing.
+- Window: `RPE_WINDOW_S = 10.0` s, tolerance `RPE_TOLERANCE_S = 1.0` s
+  (`post_processing/python_tools/data/metrics.py`, unit-tested in
+  `test/post_processing/test_metrics.py`). Ten seconds carries about
+  0.05–0.13 m of ground-truth travel on the circle/yaw/square
+  datasets — an order of magnitude above centimetre-level publication
+  noise, yet short enough to measure drift per interval.
+- Scoreboard: EKF, UKF, visual and keyframe-BA each versus ground
+  truth on the circle, yaw and square bags; report RMSE with
+  median/p95/max (a single-epoch outlier inflates RMSE while the
+  median still shows nominal tracking — see the WP06-08 closeout
+  note in `.agents/plans/WP-06/`).

@@ -194,6 +194,24 @@ CORE_TOPICS: tuple[TopicSpec, ...] = (
         True,
     ),
     TopicSpec(
+        "/alpha/localisation/ukf/odometry",
+        "nav_msgs/msg/Odometry",
+        MessageCategory.ODOMETRY,
+        True,
+    ),
+    TopicSpec(
+        "/alpha/localisation/keyframe_optimized/odometry",
+        "nav_msgs/msg/Odometry",
+        MessageCategory.ODOMETRY,
+        True,
+    ),
+    TopicSpec(
+        "/alpha/localisation/keyframe_optimized/point_cloud",
+        "sensor_msgs/msg/PointCloud2",
+        MessageCategory.POINT_CLOUD,
+        True,
+    ),
+    TopicSpec(
         "/alpha/control/filtered_odometry",
         "nav_msgs/msg/Odometry",
         MessageCategory.ODOMETRY,
@@ -231,6 +249,12 @@ IMAGE_TOPICS: tuple[TopicSpec, ...] = (
     ),
     TopicSpec(
         "/alpha/localisation/visual/features",
+        "sensor_msgs/msg/Image",
+        MessageCategory.IMAGE,
+        False,
+    ),
+    TopicSpec(
+        "/alpha/localisation/keyframe_optimized/features",
         "sensor_msgs/msg/Image",
         MessageCategory.IMAGE,
         False,

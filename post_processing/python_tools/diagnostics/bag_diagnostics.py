@@ -82,11 +82,36 @@ DRIVER_STATUS_NAME = "alpha_driver_node"
 # Calibration status published once per tick by inertial_odometry.
 INERTIAL_STATUS_NAME = "inertial_odometry"
 
+# Recorded documented-ignore (WP3 averager, parser-or-ignore rule): the
+# averager experiment keys ("use_averaged_imu", "averager_samples",
+# "averager_overflows") ride on the same INERTIAL_STATUS_NAME status and
+# stay unparsed on purpose. Only "calibrated" and
+# "calibration_complete_stamp_s" feed reports, so old and new runs parse
+# identically; see test_bag_diagnostics' averager-keys case.
+
 # Filter-wide status published once per tick by continuous_ekf.
 FILTER_STATUS_NAME = "continuous_ekf"
 
 # Per-source estimator statuses are named "continuous_ekf/<source>".
 SOURCE_STATUS_PREFIX = FILTER_STATUS_NAME + "/"
+
+# Recorded documented-ignore (WP1): the comparison-only UKF sibling
+# publishes "continuous_ukf" + "continuous_ukf/<source>" statuses that
+# deliberately share the EKF's key set (see alpha_ukf_filter's
+# publishDiagnosticsCallBack.cc), but diagnostic_log_from_bag() below
+# only joins VISUAL_STATUS_NAME and SOURCE_STATUS_PREFIX records, so UKF
+# statuses never enter Visual/Localisation records and never count as
+# malformed. Extending the parser to UKF is a separate work item; until
+# then this ignore is the contract, not an oversight.
+
+# Recorded documented-ignore (WP4): the comparison-only keyframe BA node
+# publishes a "keyframe_local_optimization" status (see
+# keyframe_local_optimization's publishDiagnosticsCallBack.cc), but
+# diagnostic_log_from_bag() below only joins VISUAL_STATUS_NAME and
+# SOURCE_STATUS_PREFIX records, so keyframe statuses never enter
+# Visual/Localisation records and never count as malformed. Extending
+# the parser to keyframe BA is a separate work item; until then this
+# ignore is the contract, not an oversight.
 
 # x-axis title for plots of bag-sourced diagnostic records.
 BAG_DIAGNOSTIC_TIME_AXIS_TITLE = "Elapsed simulation time (s)"

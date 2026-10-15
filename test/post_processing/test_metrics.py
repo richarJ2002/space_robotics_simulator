@@ -10,6 +10,7 @@ Contents:
     PublicationArtifactTests: staircase detection.
     SigmaCoverageTests: sigma coverage fractions.
     DirectionOfTravelErrorTests: heading error.
+    RpeTests: fixed-window relative-pose error.
 """
 
 from __future__ import annotations
@@ -326,6 +327,190 @@ class DirectionOfTravelErrorTests(unittest.TestCase):
                 np.ones(3, dtype=bool),
                 window_s=0.0,
             )
+
+
+class RpeTests(unittest.TestCase):
+    """Tests for fixed-window relative-pose error."""
+
+    def test_pairs_span_one_window(self) -> None:
+        """Pairs land one window ahead within tolerance."""
+        times_s = np.arange(0.0, 30.0, 0.5)
+        valid = np.ones(times_s.shape, dtype=bool)
+        index_from, index_to = metrics.relative_pose_pairs(
+            times_s, valid, window_s=10.0, tolerance_s=1.0
+        )
+        self.assertEqual(index_from.size, index_to.size)
+        self.assertGreater(index_from.size, 0)
+        separations = times_s[index_to] - times_s[index_from]
+        self.assertTrue(np.all(separations >= 10.0))
+        self.assertTrue(np.all(separations <= 11.0))
+
+    def test_pairs_skip_invalid_and_gaps(self) -> None:
+        """Invalid endpoints and real gaps break pairs."""
+        times_s = np.arange(0.0, 30.0, 0.5)
+        valid = np.ones(times_s.shape, dtype=bool)
+        valid[10] = False
+        gapped = np.delete(times_s, np.arange(25, 35))
+        gapped_valid = np.ones(gapped.shape, dtype=bool)
+        plain_from, _ = metrics.relative_pose_pairs(
+            times_s, valid, window_s=10.0, tolerance_s=1.0
+        )
+        self.assertNotIn(10, plain_from)
+        self.assertNotIn(10, metrics.relative_pose_pairs(
+            times_s, valid, window_s=10.0, tolerance_s=1.0
+        )[1])
+        gapped_from, gapped_to = metrics.relative_pose_pairs(
+            gapped, gapped_valid, window_s=10.0, tolerance_s=1.0
+        )
+        self.assertTrue(
+            np.all(gapped[gapped_to] - gapped[gapped_from] <= 11.0)
+        )
+
+    def test_pairs_reject_non_positive_window(self) -> None:
+        """Non-positive window or tolerance is a caller error."""
+        times_s = np.arange(3.0)
+        valid = np.ones(3, dtype=bool)
+        with self.assertRaises(ValueError):
+            metrics.relative_pose_pairs(times_s, valid, window_s=0.0)
+        with self.assertRaises(ValueError):
+            metrics.relative_pose_pairs(times_s, valid, tolerance_s=0.0)
+
+    def test_translation_ignores_constant_offset(self) -> None:
+        """A constant position offset gives zero RPE."""
+        times_s = np.arange(0.0, 30.0, 0.5)
+        truth = np.column_stack(
+            [0.02 * times_s, np.zeros_like(times_s), np.zeros_like(times_s)]
+        )
+        estimate = truth + np.array([1.0, -2.0, 0.5])
+        valid = np.ones(times_s.shape, dtype=bool)
+        index_from, index_to = metrics.relative_pose_pairs(
+            times_s, valid, window_s=10.0, tolerance_s=1.0
+        )
+        error_m = metrics.relative_translation_error_m(
+            estimate, truth, index_from, index_to
+        )
+        np.testing.assert_allclose(error_m, 0.0, atol=1e-12)
+
+    def test_translation_measures_drift_per_window(self) -> None:
+        """Linear drift reports rate times actual separation."""
+        times_s = np.arange(0.0, 30.0, 0.5)
+        truth = np.column_stack(
+            [0.02 * times_s, np.zeros_like(times_s), np.zeros_like(times_s)]
+        )
+        estimate = truth.copy()
+        estimate[:, 0] += 0.001 * times_s
+        valid = np.ones(times_s.shape, dtype=bool)
+        index_from, index_to = metrics.relative_pose_pairs(
+            times_s, valid, window_s=10.0, tolerance_s=1.0
+        )
+        error_m = metrics.relative_translation_error_m(
+            estimate, truth, index_from, index_to
+        )
+        expected = 0.001 * (times_s[index_to] - times_s[index_from])
+        np.testing.assert_allclose(error_m, expected, rtol=1e-12)
+
+    def test_rotation_ignores_constant_offset(self) -> None:
+        """A constant attitude offset gives zero rotational RPE."""
+        times_s = np.arange(0.0, 30.0, 0.5)
+        yaw = 0.01 * times_s
+        truth = np.column_stack(
+            [np.zeros_like(yaw), np.zeros_like(yaw),
+             np.sin(yaw / 2.0), np.cos(yaw / 2.0)]
+        )
+        offset = np.pi / 6.0
+        # Exact yaw composition: offset (+) truth yaw stays unit.
+        estimate = np.column_stack(
+            [
+                np.zeros_like(yaw),
+                np.zeros_like(yaw),
+                np.sin((yaw + offset) / 2.0),
+                np.cos((yaw + offset) / 2.0),
+            ]
+        )
+        valid = np.ones(times_s.shape, dtype=bool)
+        index_from, index_to = metrics.relative_pose_pairs(
+            times_s, valid, window_s=10.0, tolerance_s=1.0
+        )
+        error_deg = metrics.relative_rotation_error_deg(
+            estimate, truth, index_from, index_to
+        )
+        np.testing.assert_allclose(error_deg, 0.0, atol=1e-9)
+
+    def test_rotation_measures_drift_per_window(self) -> None:
+        """Yaw drift reports rate times separation in degrees."""
+        times_s = np.arange(0.0, 30.0, 0.5)
+        truth = np.tile(np.array([0.0, 0.0, 0.0, 1.0]), (times_s.size, 1))
+        drift = 0.002 * times_s
+        estimate = np.column_stack(
+            [
+                np.zeros_like(drift),
+                np.zeros_like(drift),
+                np.sin(drift / 2.0),
+                np.cos(drift / 2.0),
+            ]
+        )
+        valid = np.ones(times_s.shape, dtype=bool)
+        index_from, index_to = metrics.relative_pose_pairs(
+            times_s, valid, window_s=10.0, tolerance_s=1.0
+        )
+        error_deg = metrics.relative_rotation_error_deg(
+            estimate, truth, index_from, index_to
+        )
+        expected = np.degrees(0.002 * (times_s[index_to] - times_s[index_from]))
+        np.testing.assert_allclose(error_deg, expected, rtol=1e-9)
+
+    def test_rotation_survives_branch_cut(self) -> None:
+        """Pairs straddling +/-pi yaw agree when motion agrees."""
+        times_s = np.arange(0.0, 30.0, 0.5)
+        yaw = np.linspace(-np.pi + 0.05, np.pi - 0.05, times_s.size)
+        # Push the sweep across the cut so legs disagree in raw angle.
+        yaw = yaw + 0.1
+        quat = lambda a: np.column_stack(
+            [np.zeros_like(a), np.zeros_like(a),
+             np.sin(a / 2.0), np.cos(a / 2.0)]
+        )
+        truth = quat(yaw)
+        estimate = quat(yaw + 0.001)
+        valid = np.ones(times_s.shape, dtype=bool)
+        index_from, index_to = metrics.relative_pose_pairs(
+            times_s, valid, window_s=10.0, tolerance_s=1.0
+        )
+        error_deg = metrics.relative_rotation_error_deg(
+            estimate, truth, index_from, index_to
+        )
+        self.assertTrue(np.all(error_deg < 0.1))
+
+    def test_non_finite_endpoints_propagate_nan(self) -> None:
+        """NaN endpoints give NaN pair errors, not exceptions."""
+        estimate = np.array([[0.0, 0.0, 0.0], [np.nan, 0.0, 0.0]])
+        truth = np.zeros((2, 3))
+        orientation = np.tile(np.array([0.0, 0.0, 0.0, 1.0]), (2, 1))
+        bad_orientation = orientation.copy()
+        bad_orientation[1, 0] = np.nan
+        index = np.array([0])
+        other = np.array([1])
+        self.assertTrue(
+            np.isnan(
+                metrics.relative_translation_error_m(
+                    estimate, truth, index, other
+                )[0]
+            )
+        )
+        self.assertTrue(
+            np.isnan(
+                metrics.relative_rotation_error_deg(
+                    bad_orientation, orientation, index, other
+                )[0]
+            )
+        )
+
+    def test_empty_series_pairs_empty(self) -> None:
+        """Empty input pairs to empty output."""
+        index_from, index_to = metrics.relative_pose_pairs(
+            np.zeros(0), np.zeros(0, dtype=bool)
+        )
+        self.assertEqual(index_from.size, 0)
+        self.assertEqual(index_to.size, 0)
 
 
 if __name__ == "__main__":

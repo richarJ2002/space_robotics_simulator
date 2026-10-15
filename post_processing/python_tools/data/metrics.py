@@ -2,10 +2,13 @@
 @brief  Shared, pure metric functions operating on the typed series in
         python_tools.data.models and the alignment primitives in
         python_tools.data.alignment: position/attitude/velocity error
-        summaries, sample-rate and gap health, covariance-derived standard
-        deviations and normalized residuals, and six-wheel speed
-        conversion. Every function here is deterministic and side-effect
-        free, so it is testable against synthetic arrays without a bag.
+        summaries, fixed-window relative-pose error (translation and
+        rotation RMSE over a canonical window, the drift-per-interval
+        complement to absolute ATE), sample-rate and gap health,
+        covariance-derived standard deviations and normalized residuals,
+        and six-wheel speed conversion. Every function here is
+        deterministic and side-effect free, so it is testable against
+        synthetic arrays without a bag.
 """
 
 from __future__ import annotations
@@ -528,6 +531,198 @@ def direction_of_travel_error_deg(
         dot = float(np.dot(truth_displacement, estimate_displacement))
         direction_error_deg[end_index] = np.degrees(np.arctan2(cross, dot))
     return direction_error_deg
+
+
+# Canonical fixed RPE window, seconds: every estimator-vs-ground-truth
+# scoreboard entry (EKF, UKF, visual, keyframe-BA on each of the circle,
+# yaw and square datasets) pairs samples this far apart. 10 s carries
+# about 0.05-0.13 m of ground-truth travel on these datasets (measured
+# 2026-10-08 bags), an order of magnitude above centimetre-level
+# publication noise yet short enough to measure drift per interval
+# rather than repeat absolute ATE.
+RPE_WINDOW_S = 10.0
+
+# Canonical RPE pairing tolerance, seconds: a pair whose actual separation
+# exceeds the window by more than this is dropped rather than trusted.
+# 1.0 s exceeds the slowest estimator period (visual/keyframe-BA at
+# ~2 Hz), so every producer forms pairs across intact coverage while a
+# real gap still breaks pairing.
+RPE_TOLERANCE_S = 1.0
+
+
+def _quaternion_conjugate(
+    quaternions_xyzw: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
+    """!
+    @brief   Conjugates unit quaternions (negates the vector part).
+
+    @param   quaternions_xyzw
+              Quaternions, (x, y, z, w), shape (N, 4).
+
+    @return  The conjugates, same shape.
+    """
+    conjugated = quaternions_xyzw.copy()
+    conjugated[:, :3] = -conjugated[:, :3]
+    return conjugated
+
+
+def _quaternion_multiply(
+    quaternions_a_xyzw: npt.NDArray[np.float64],
+    quaternions_b_xyzw: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
+    """!
+    @brief   Composes paired unit quaternions (`a` applied after `b`).
+
+    @param   quaternions_a_xyzw
+              Left operands, (x, y, z, w), shape (N, 4).
+    @param   quaternions_b_xyzw
+              Right operands, same shape.
+
+    @return  The compositions, shape (N, 4).
+    """
+    ax, ay, az, aw = (
+        quaternions_a_xyzw[:, 0],
+        quaternions_a_xyzw[:, 1],
+        quaternions_a_xyzw[:, 2],
+        quaternions_a_xyzw[:, 3],
+    )
+    bx, by, bz, bw = (
+        quaternions_b_xyzw[:, 0],
+        quaternions_b_xyzw[:, 1],
+        quaternions_b_xyzw[:, 2],
+        quaternions_b_xyzw[:, 3],
+    )
+    return np.column_stack(
+        [
+            aw * bx + ax * bw + ay * bz - az * by,
+            aw * by - ax * bz + ay * bw + az * bx,
+            aw * bz + ax * by - ay * bx + az * bw,
+            aw * bw - ax * bx - ay * by - az * bz,
+        ]
+    )
+
+
+def relative_pose_pairs(
+    times_s: npt.NDArray[np.float64],
+    valid: npt.NDArray[np.bool_],
+    window_s: float = RPE_WINDOW_S,
+    tolerance_s: float = RPE_TOLERANCE_S,
+) -> tuple[npt.NDArray[np.intp], npt.NDArray[np.intp]]:
+    """!
+    @brief   Pairs each valid sample with the first later sample at least
+              one RPE window ahead, so a relative-pose error series needs
+              no further alignment: both legs of every pair share the
+              estimator's own clock.
+
+    @param   times_s
+              Sample times, seconds, shape (N,), ascending.
+    @param   valid
+              Per-sample ground-truth alignment validity, shape (N,); a
+              pair is kept only when both of its endpoints are valid.
+    @param   window_s
+              Nominal pair separation, seconds.
+    @param   tolerance_s
+              Largest accepted overshoot beyond `window_s`, seconds; a
+              later sample farther than `window_s + tolerance_s` (a real
+              gap, not sampling jitter) breaks the pair instead.
+
+    @return  `(index_from, index_to)`: the kept pair endpoints, each
+              shape (K,).
+
+    @throws  ValueError
+              If `window_s` or `tolerance_s` is not positive.
+    """
+    # Both limits define physical scales and must be positive.
+    if not window_s > 0.0 or not tolerance_s > 0.0:
+        raise ValueError("window_s and tolerance_s must be positive")
+    sample_count = times_s.size
+    if sample_count == 0:
+        empty = np.zeros(0, dtype=np.intp)
+        return empty, empty
+    # First sample at least one window ahead of each sample.
+    index_to = np.searchsorted(times_s, times_s + window_s, side="left")
+    in_range = index_to < sample_count
+    # Clamp so indexing below never goes out of bounds; `in_range`
+    # discards exactly the clamped entries.
+    safe_to = np.clip(index_to, 0, sample_count - 1)
+    close_enough = (times_s[safe_to] - times_s) <= (window_s + tolerance_s)
+    keep = valid & in_range & close_enough & valid[safe_to]
+    index_from = np.nonzero(keep)[0]
+    return index_from, index_to[keep]
+
+
+def relative_translation_error_m(
+    estimate_position_m: npt.NDArray[np.float64],
+    truth_position_m: npt.NDArray[np.float64],
+    index_from: npt.NDArray[np.intp],
+    index_to: npt.NDArray[np.intp],
+) -> npt.NDArray[np.float64]:
+    """!
+    @brief   Computes the translational relative-pose error per pair: the
+              magnitude of (estimate displacement minus ground-truth
+              displacement) across the pair. A constant position offset
+              cancels exactly, so this measures drift per window, not
+              absolute error.
+
+    @param   estimate_position_m
+              Estimator position, metres, shape (N, 3).
+    @param   truth_position_m
+              Ground-truth position interpolated to the estimator's own
+              sample times, metres, shape (N, 3), same frame.
+    @param   index_from
+              Pair start indices, shape (K,).
+    @param   index_to
+              Pair end indices, shape (K,).
+
+    @return  Per-pair error magnitudes, metres, shape (K,); NaN where
+              either endpoint is non-finite.
+    """
+    estimate_displacement = estimate_position_m[index_to] - estimate_position_m[index_from]
+    truth_displacement = truth_position_m[index_to] - truth_position_m[index_from]
+    return np.linalg.norm(estimate_displacement - truth_displacement, axis=-1)
+
+
+def relative_rotation_error_deg(
+    estimate_orientation_xyzw: npt.NDArray[np.float64],
+    truth_orientation_xyzw: npt.NDArray[np.float64],
+    index_from: npt.NDArray[np.intp],
+    index_to: npt.NDArray[np.intp],
+) -> npt.NDArray[np.float64]:
+    """!
+    @brief   Computes the rotational relative-pose error per pair: the
+              geodesic angle between the estimator's relative rotation
+              across the pair and ground truth's. A constant attitude
+              offset cancels exactly, and the double-cover-safe geodesic
+              keeps pairs straddling the +/-pi yaw branch cut small when
+              both legs agree physically.
+
+    @param   estimate_orientation_xyzw
+              Estimator orientation, (x, y, z, w), shape (N, 4).
+    @param   truth_orientation_xyzw
+              Ground-truth orientation interpolated to the estimator's own
+              sample times, same shape.
+    @param   index_from
+              Pair start indices, shape (K,).
+    @param   index_to
+              Pair end indices, shape (K,).
+
+    @return  Per-pair error angles, degrees in [0, 180], shape (K,); NaN
+              where either endpoint is non-finite.
+    """
+    estimate_relative = _quaternion_multiply(
+        estimate_orientation_xyzw[index_to],
+        _quaternion_conjugate(estimate_orientation_xyzw[index_from]),
+    )
+    truth_relative = _quaternion_multiply(
+        truth_orientation_xyzw[index_to],
+        _quaternion_conjugate(truth_orientation_xyzw[index_from]),
+    )
+    error_quaternion = _quaternion_multiply(
+        estimate_relative, _quaternion_conjugate(truth_relative)
+    )
+    identity = np.zeros((error_quaternion.shape[0], 4))
+    identity[:, 3] = 1.0
+    return np.degrees(quaternion_geodesic_angle(error_quaternion, identity))
 
 
 def wheel_speed_mps(

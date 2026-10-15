@@ -259,6 +259,69 @@ class BagDiagnosticConversionTests(unittest.TestCase):
                 uncalibrated, 100_000_000_000)
         )
 
+    def test_inertial_calibration_ignores_averager_keys(self) -> None:
+        """Averager keys ride along without changing calibration reads."""
+        series = _collect(
+            [
+                _array(
+                    106,
+                    [
+                        _status(
+                            "inertial_odometry",
+                            {"calibrated": "true",
+                             "calibration_complete_stamp_s":
+                                 "105.5",
+                             "use_averaged_imu": "true",
+                             "averager_samples": "10",
+                             "averager_overflows": "3"},
+                        )
+                    ],
+                ),
+            ]
+        )
+        self.assertAlmostEqual(
+            bag_diagnostics.inertial_calibration_complete_elapsed_s(
+                series, 100_000_000_000),
+            5.5,
+        )
+
+    def test_log_ignores_keyframe_status(self) -> None:
+        """Keyframe statuses ride along without changing records."""
+        series = _collect(
+            [
+                _array(
+                    130,
+                    [
+                        _status("visual_odometry", _VISUAL_VALUES),
+                        _status("continuous_ekf", _FILTER_VALUES),
+                        _status(
+                            "continuous_ekf/wheel",
+                            _SOURCE_VALUES,
+                        ),
+                        _status(
+                            "keyframe_local_optimization",
+                            {"ready": "true",
+                             "reason": "tracking",
+                             "trigger_mode": "count",
+                             "received": "10",
+                             "stale_discarded": "0",
+                             "optimizations": "2",
+                             "keyframes": "5",
+                             "landmarks": "400",
+                             "last_cost_m2": "0.0100",
+                             "last_optimization_ms": "12.0"},
+                        ),
+                    ],
+                )
+            ]
+        )
+        log = bag_diagnostics.diagnostic_log_from_bag(
+            series, Path("/bag")
+        )
+        self.assertEqual(log.unparsed_line_count, 0)
+        self.assertEqual(len(log.visual_records), 1)
+        self.assertEqual(len(log.localisation_records), 1)
+
     def test_system_state_transitions_skip_heartbeats(self) -> None:
         """Only state changes are reported."""
         series = _collect(
