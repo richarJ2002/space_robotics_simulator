@@ -58,8 +58,10 @@ required=(
   "config/alpha/ros_gz_bridge.yaml"
   "parameters/systems/alpha/alpha_drivers/alpha_drivers.yaml"
   "parameters/systems/alpha/alpha_localisation/alpha_kalman_filter.yaml"
+  "parameters/systems/alpha/alpha_localisation/alpha_ukf_filter.yaml"
   "parameters/systems/alpha/alpha_localisation/ground_truth.yaml"
   "parameters/systems/alpha/alpha_localisation/inertial_odometry.yaml"
+  "parameters/systems/alpha/alpha_localisation/keyframe_local_optimization.yaml"
   "parameters/systems/alpha/alpha_localisation/visual_odometry.yaml"
   "parameters/systems/alpha/alpha_localisation/wheel_odometry.yaml"
   "parameters/systems/alpha/alpha_control/ackermann_controller.yaml"
@@ -106,8 +108,10 @@ print("[launch_test] OK: bridge exact 7-name set")
 checks = [
     ("parameters/systems/alpha/alpha_drivers/alpha_drivers.yaml", "alpha_driver_node"),
     ("parameters/systems/alpha/alpha_localisation/alpha_kalman_filter.yaml", "continuous_ekf"),
+    ("parameters/systems/alpha/alpha_localisation/alpha_ukf_filter.yaml", "continuous_ukf"),
     ("parameters/systems/alpha/alpha_localisation/ground_truth.yaml", "ground_truth"),
     ("parameters/systems/alpha/alpha_localisation/inertial_odometry.yaml", "inertial_odometry"),
+    ("parameters/systems/alpha/alpha_localisation/keyframe_local_optimization.yaml", "keyframe_local_optimization"),
     ("parameters/systems/alpha/alpha_localisation/visual_odometry.yaml", "visual_odometry"),
     ("parameters/systems/alpha/alpha_localisation/wheel_odometry.yaml", "wheel_odometry"),
     ("parameters/systems/alpha/alpha_control/ackermann_controller.yaml", "ackermann_controller"),
@@ -118,7 +122,7 @@ for rel, key in checks:
     data = yaml.safe_load(open(root / rel))
     assert isinstance(data, dict) and key in data, f"{rel} missing {key}"
     assert isinstance(data[key].get("ros__parameters"), dict), f"{rel} empty params"
-print("[launch_test] OK: 9 param node keys")
+print("[launch_test] OK: 11 param node keys")
 PYEOF
 
 # ---------------------------------------------------------------------------- #
@@ -306,10 +310,10 @@ bash -c '
   parse_arguments --record-images
   [ "$RECORD_IMAGES" -eq 1 ]
   assemble_record_topics
-  [ "${#RECORD_TOPICS[@]}" -eq 26 ]
+  [ "${#RECORD_TOPICS[@]}" -eq 30 ]
   RECORD_IMAGES=0
   assemble_record_topics
-  [ "${#RECORD_TOPICS[@]}" -eq 23 ]
+  [ "${#RECORD_TOPICS[@]}" -eq 26 ]
 ' _ "$LAUNCH_SH" >/dev/null || fail "recording argument parsing / topic assembly"
 pass "recording argument parsing / topic assembly"
 
@@ -469,7 +473,7 @@ assert manifest[\"world\"] == \"crater_field\", manifest
 assert manifest[\"system\"] == \"alpha\", manifest
 assert manifest[\"recording_profile\"] == \"core\", manifest
 assert manifest[\"storage_identifier\"] == \"mcap\", manifest
-assert len(manifest[\"topics\"]) == 23, manifest
+assert len(manifest[\"topics\"]) == 26, manifest
 assert manifest[\"bag_destination\"].endswith(\"/localisation\"), manifest
 " "$SRS_ROSBAG_DIR/manifest.json"
   # The recorder is still alive and has not yet finalized its metadata.

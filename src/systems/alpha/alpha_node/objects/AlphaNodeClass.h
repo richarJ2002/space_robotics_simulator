@@ -20,8 +20,10 @@
 #include "objects/AckermannControllerNodeClass.h"
 #include "objects/AlphaDriverNodeClass.h"
 #include "objects/AlphaKalmanFilterNodeClass.h"
+#include "objects/AlphaUkfFilterNodeClass.h"
 #include "objects/GroundTruthNodeClass.h"
 #include "objects/InertialOdometryNodeClass.h"
+#include "objects/KeyframeLocalOptimizationNodeClass.h"
 #include "objects/WheelOdometryNodeClass.h"
 #include "visual_odometry_node/objects/VisualOdometryNodeClass.h"
 
@@ -39,7 +41,7 @@ namespace systems::alpha::alpha_node
 /*!
  * @brief           Owns one instance of every node in Alpha's stack --
  *                  this system's own EKF/path/TF node and Gazebo hardware
- *                  interface, the four localisation static libraries,
+ *                  interface, the five localisation static libraries,
  *                  the Ackermann controller, the low-pass filter that
  *                  smooths the fused estimate for controllers, and the
  *                  start-up supervisor that gates motion commands -- and
@@ -76,9 +78,15 @@ class AlphaNode final
                          localisation::visual_odometry::VisualOdometryNode>()),
         p_wheelOdometry(std::make_shared<
                         localisation::wheel_odometry::WheelOdometryNode>()),
+        p_keyframeOptimization(
+            std::make_shared<localisation::keyframe_local_optimization::
+                                 KeyframeLocalOptimizationNode>()),
         p_kalmanFilter(
             std::make_shared<systems::alpha::alpha_localisation::
                                  alpha_kalman_filter::AlphaKalmanFilterNode>()),
+        p_ukfFilter(
+            std::make_shared<systems::alpha::alpha_localisation::
+                                 alpha_ukf_filter::AlphaUkfFilterNode>()),
         p_ackermannController(
             std::make_shared<
                 control::ackermann_controller::AckermannControllerNode>()),
@@ -91,7 +99,7 @@ class AlphaNode final
     {
         /*!
          * Each node keeps its own default (mutually exclusive) callback
-         * group, so this multi-threaded executor lets all nine progress
+         * group, so this multi-threaded executor lets all eleven progress
          * independently of one another -- matching the concurrency they had
          * as separate processes -- while still serializing each node's own
          * callbacks against itself, which e.g. AlphaKalmanFilterNode's
@@ -102,7 +110,9 @@ class AlphaNode final
         executor.add_node(p_inertialOdometry);
         executor.add_node(p_visualOdometry);
         executor.add_node(p_wheelOdometry);
+        executor.add_node(p_keyframeOptimization);
         executor.add_node(p_kalmanFilter);
+        executor.add_node(p_ukfFilter);
         executor.add_node(p_ackermannController);
         executor.add_node(p_estimateFilter);
         executor.add_node(p_startupSupervisor);
@@ -173,12 +183,31 @@ class AlphaNode final
         p_wheelOdometry;
 
     /*!
+     * @brief       Refines keyframes with Full BA, comparison-only
+     *              beside p_kalmanFilter; never fused, never gates
+     *              READY, never TF.
+     */
+    std::shared_ptr<localisation::keyframe_local_optimization::
+                        KeyframeLocalOptimizationNode>
+        p_keyframeOptimization;
+
+    /*!
      * @brief       Fuses every odometry source into one EKF estimate and
      *              exposes it as odometry, a retained path, and TF.
      */
     std::shared_ptr<systems::alpha::alpha_localisation::
                         alpha_kalman_filter::AlphaKalmanFilterNode>
         p_kalmanFilter;
+
+    /*!
+     * @brief       Fuses every odometry source into one UKF estimate and
+     *              exposes it as odometry plus a retained path, never TF.
+     *              Comparison-only beside p_kalmanFilter, which stays the
+     *              default estimate; never gates READY.
+     */
+    std::shared_ptr<systems::alpha::alpha_localisation::
+                        alpha_ukf_filter::AlphaUkfFilterNode>
+        p_ukfFilter;
 
     /*!
      * @brief       Converts commanded body velocity into wheel commands.

@@ -18,7 +18,9 @@ target_link_libraries(alpha_node
   inertial_odometry
   visual_odometry
   wheel_odometry
+  keyframe_local_optimization
   alpha_kalman_filter
+  alpha_ukf_filter
   alpha_supervisor
   ackermann_controller
   estimate_filter

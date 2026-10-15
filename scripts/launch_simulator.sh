@@ -794,13 +794,14 @@ unpause_simulation() {
 # ---------------------------------------------------------------------------- #
 
 # Core telemetry, always recorded: ground truth, every subsystem's raw
-# sensor input and odometry output, commands, the slip topics, and the
+# sensor input and odometry output, commands, the slip topics, the UKF's
+# comparison-only odometry, and the
 # shared diagnostics topic that carries every node's periodic machine
 # records in simulation time (moved off the console). Excludes
 # retained `Path` topics (nav_msgs/Path duplicates odometry history and
 # makes later bag messages progressively larger for no post-processing
 # benefit -- report trajectories are drawn from the odometry topics
-# instead).
+# instead; this excludes the EKF, ground-truth and UKF paths alike).
 # Topic suffixes recorded under /${SYSTEM}/ (`/clock` is global and keeps
 # no prefix). assemble_record_topics() prefixes them with the live SYSTEM
 # value, so /alpha stays the default-system example without hardcoding it
@@ -827,6 +828,9 @@ CORE_RECORD_SUFFIXES=(
   localisation/visual/reset
   localisation/kalman_filter/odometry
   localisation/kalman_filter/wheel_slip_ratio
+  localisation/ukf/odometry
+  localisation/keyframe_optimized/odometry
+  localisation/keyframe_optimized/point_cloud
   control/filtered_odometry
 )
 
@@ -835,6 +839,7 @@ IMAGE_RECORD_SUFFIXES=(
   drivers/loccam/left
   drivers/loccam/right
   localisation/visual/features
+  localisation/keyframe_optimized/features
 )
 
 #!

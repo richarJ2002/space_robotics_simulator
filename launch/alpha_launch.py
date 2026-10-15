@@ -3,7 +3,11 @@
 Source of truth for which nodes the Alpha system owns. Launches the
 single ``alpha_node`` executable (which composes ``alpha_driver_node``,
 ``ground_truth``, ``inertial_odometry``, ``visual_odometry``,
-``wheel_odometry``, ``continuous_ekf``, ``ackermann_controller`` and
+``wheel_odometry``, ``keyframe_local_optimization`` (comparison-only
+sliding-window Full BA, never fused, never gates READY),
+``continuous_ekf``, ``continuous_ukf`` (comparison-only
+side-by-side with the EKF, never TF, never gates READY),
+``ackermann_controller``, ``estimate_low_pass_filter`` and
 ``startup_supervisor`` in one process) plus, optionally, Gazebo, the ``ros_gz_bridge`` and RViz.
 
 ``system_name`` (default ``alpha``) selects the topic namespace every node
@@ -103,14 +107,16 @@ def generate_launch_description():
         description='RCUTILS_CONSOLE_OUTPUT_FORMAT for alpha_node.',
     )
 
-    # Hardcoded Alpha parameter tree: 9 files. use_sim_time is wired as a
+    # Hardcoded Alpha parameter tree: 11 files. use_sim_time is wired as a
     # Node parameter below, and the bridge is exempt per D5.
     parameters_root = [pkg_share, 'parameters', 'systems', 'alpha']
     alpha_parameters = [
         PathJoinSubstitution(parameters_root + ['alpha_drivers', 'alpha_drivers.yaml']),
         PathJoinSubstitution(parameters_root + ['alpha_localisation', 'alpha_kalman_filter.yaml']),
+        PathJoinSubstitution(parameters_root + ['alpha_localisation', 'alpha_ukf_filter.yaml']),
         PathJoinSubstitution(parameters_root + ['alpha_localisation', 'ground_truth.yaml']),
         PathJoinSubstitution(parameters_root + ['alpha_localisation', 'inertial_odometry.yaml']),
+        PathJoinSubstitution(parameters_root + ['alpha_localisation', 'keyframe_local_optimization.yaml']),
         PathJoinSubstitution(parameters_root + ['alpha_localisation', 'visual_odometry.yaml']),
         PathJoinSubstitution(parameters_root + ['alpha_localisation', 'wheel_odometry.yaml']),
         PathJoinSubstitution(parameters_root + ['alpha_control', 'ackermann_controller.yaml']),

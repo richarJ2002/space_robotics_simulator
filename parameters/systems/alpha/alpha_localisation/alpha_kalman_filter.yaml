@@ -22,9 +22,15 @@ continuous_ekf:
     gravity_mps2: 1.62
     fuse_visual_pose: true
     fuse_wheel_twist: true
-    # Zero selects a 99% chi-square gate for each update's active dimension.
-    visual_nis_threshold: 0.0
-    wheel_nis_threshold: 0.0
+    # Explicit robustness margin (~3x the 99% chi-square gate for each
+    # update's active dimension: wheel 3, visual 3-4). Zero selects that
+    # automatic gate. The margin rides through a stationary common-mode
+    # velocity disagreement (both sources rejected every update for 16 s
+    # on the square run, covariance 0.05 to 63, z-runaway permanent in
+    # increment mode) while normal-run peaks fuse exactly as before: the
+    # threshold moves only the reject boundary, never the Kalman gain.
+    visual_nis_threshold: 40.0
+    wheel_nis_threshold: 35.0
     accelerometer_noise_variance: 0.0025
     gyroscope_noise_variance: 0.000064
     accelerometer_bias_random_walk_variance: 0.000001
