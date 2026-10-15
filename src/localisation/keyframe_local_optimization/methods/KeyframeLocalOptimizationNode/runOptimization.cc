@@ -77,12 +77,22 @@ void KeyframeLocalOptimizationNode::runOptimization()
     }
 
     /* Operator-visible cost and timing stay on diagnostics; the
-     * console keeps one short line per optimization at most. */
+     * console keeps one short line per optimization at most, plus
+     * a throttled INFO summary so the terminal shows BA health
+     * without 2 Hz spam at the default log level. */
     SRS_LOG_DEBUG(get_logger(),
                   "Keyframe BA #%llu: cost %.4f m2, %.1f ms",
                   static_cast<unsigned long long>(optimizationCount),
                   latestCost_m2,
                   latestOptimizationMs);
+    SRS_LOG_INFO_THROTTLE(get_logger(),
+                          *get_clock(),
+                          10000,
+                          "Keyframe BA #%llu: cost %.4f m2, %zu keys %zu marks",
+                          static_cast<unsigned long long>(optimizationCount),
+                          latestCost_m2,
+                          keyframeWindow.keyframeCount(),
+                          keyframeWindow.landmarkCount());
 }
 
 } /* namespace localisation::keyframe_local_optimization */
