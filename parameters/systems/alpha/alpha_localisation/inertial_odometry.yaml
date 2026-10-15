@@ -12,3 +12,11 @@ inertial_odometry:
     calibration_samples: 100
     acceleration_deadband_mps2: 0.02
     angular_rate_deadband_radps: 0.002
+    # Averager experiment (WP3): false keeps the raw low-pass path.
+    use_averaged_imu: false
+    # Count bound in samples (clamped to the 32-sample ring capacity).
+    averaging_window_samples: 10
+    # Time bound in ms; whichever bound fills first drops oldest first.
+    # 200 ms holds 10 samples at the 50 Hz IMU rate, matching the count
+    # bound above.
+    averaging_window_ms: 200.0

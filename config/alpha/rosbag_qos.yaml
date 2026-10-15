@@ -23,7 +23,7 @@
 
 # Inertial odometry's bias-corrected, gravity-free IMU stage:
 # sensor_msgs/msg/Imu, rclcpp::SensorDataQoS()
-# (src/localisation/inertial_odometry/.../InertialOdometryNode.h).
+# (src/localisation/inertial_odometry_node/.../InertialOdometryNode.h).
 /alpha/localisation/inertial/filtered_imu:
   history: keep_last
   depth: 5

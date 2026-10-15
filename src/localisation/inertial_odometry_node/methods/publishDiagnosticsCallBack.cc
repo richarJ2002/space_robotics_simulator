@@ -55,6 +55,15 @@ void InertialOdometryNode::publishDiagnosticsCallBack()
                                   status);
     }
 
+    /* Averager experiment wiring: comparison-only, never gates READY. */
+    diagnostics::addFlagValue("use_averaged_imu", useAveragedImu, status);
+    diagnostics::addCountValue(
+        "averager_samples",
+        static_cast<std::uint64_t>(inertialAverager.sampleCount()),
+        status);
+    diagnostics::addCountValue(
+        "averager_overflows", averagerOverflowCount, status);
+
     diagnostic_msgs::msg::DiagnosticArray record;
     record.header.stamp = now();
     record.status.push_back(status);

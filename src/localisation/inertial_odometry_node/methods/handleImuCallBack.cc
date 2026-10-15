@@ -11,6 +11,8 @@
 #include "console/console.h"
 
 /* Object Include */
+#include "objects/InertialAveragingSampleStruct.h"
+#include "objects/InertialAveragingStatusEnum.h"
 #include "objects/InertialOdometryNodeClass.h"
 
 /* Data include */
@@ -174,22 +176,80 @@ void InertialOdometryNode::handleImuCallBack(
         return;
     }
 
+    /* Averaging experiment: calibrate on raw, then average the
+     * bias-corrected sample. Either this branch or the low-pass filter
+     * below runs per sample, never both. */
+    if (useAveragedImu)
+    {
+        inertial_averaging::InertialAveragingSample rawSample{};
+        rawSample.stamp_s = stamp_s;
+        for (std::size_t index = 0U; index < 3U; index++)
+        {
+            /* Bias-correct the raw axes before averaging. */
+            rawSample.acceleration_mPs2[index] =
+                rawAcceleration[index] - accelerationBias[index];
+            rawSample.angularRate_radPs[index] =
+                rawAngularRate[index] - angularRateBias[index];
+        }
+
+        inertial_averaging::InertialAveragingSample averagedSample{};
+        const inertial_averaging::InertialAveragingStatus averagingStatus =
+            inertialAverager.push(rawSample, averagedSample);
+        if (averagingStatus ==
+            inertial_averaging::InertialAveragingStatus::
+                INERTIAL_AVERAGING_WINDOW_OVERFLOW)
+        {
+            /* Oldest sample dropped; the mean is still valid. */
+            averagerOverflowCount++;
+        }
+        const bool isAverageUsable =
+            averagingStatus ==
+                inertial_averaging::InertialAveragingStatus::
+                    INERTIAL_AVERAGING_SUCCESS ||
+            averagingStatus ==
+                inertial_averaging::InertialAveragingStatus::
+                    INERTIAL_AVERAGING_WINDOW_OVERFLOW;
+        if (!isAverageUsable)
+        {
+            SRS_LOG_WARN_THROTTLE(get_logger(),
+                                    *get_clock(),
+                                    2000,
+                                    "IMU averager unusable; sample ignored");
+
+            /* Skip integration entirely for this sample. */
+            return;
+        }
+        for (std::size_t index = 0U; index < 3U; index++)
+        {
+            /* The window mean replaces the filtered state directly. */
+            filteredAcceleration[index] =
+                averagedSample.acceleration_mPs2[index];
+            filteredAngularRate[index] =
+                averagedSample.angularRate_radPs[index];
+        }
+    }
+    else
+    {
+        for (std::size_t index = 0U; index < 3U; index++)
+        {
+            /*!
+             * Exponential smoothing: filtered += gain * (bias-corrected raw
+             * - filtered). Equivalent to filtered = (1-gain)*filtered +
+             * gain*raw_corrected.
+             */
+            filteredAcceleration[index] +=
+                gain * (rawAcceleration[index] - accelerationBias[index] -
+                        filteredAcceleration[index]);
+
+            /* Apply the same exponential smoothing to angular rate. */
+            filteredAngularRate[index] +=
+                gain * (rawAngularRate[index] - angularRateBias[index] -
+                        filteredAngularRate[index]);
+        }
+    }
+
     for (std::size_t index = 0U; index < 3U; index++)
     {
-        /*!
-         * Exponential smoothing: filtered += gain * (bias-corrected raw -
-         * filtered). Equivalent to filtered = (1-gain)*filtered +
-         * gain*raw_corrected.
-         */
-        filteredAcceleration[index] +=
-            gain * (rawAcceleration[index] - accelerationBias[index] -
-                    filteredAcceleration[index]);
-
-        /* Apply the same exponential smoothing to angular rate. */
-        filteredAngularRate[index] +=
-            gain * (rawAngularRate[index] - angularRateBias[index] -
-                    filteredAngularRate[index]);
-
         /* This axis's filtered angular rate is within the deadband. */
         if (std::abs(filteredAngularRate[index]) < angularRateDeadband_radPs)
         {

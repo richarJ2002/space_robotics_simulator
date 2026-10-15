@@ -12,7 +12,7 @@ add_library(inertial_odometry STATIC
 )
 target_compile_features(inertial_odometry PUBLIC cxx_std_17)
 target_include_directories(inertial_odometry PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(inertial_odometry common_console common_diagnostics)
+target_link_libraries(inertial_odometry inertial_averaging common_console common_diagnostics)
 ament_target_dependencies(inertial_odometry
   diagnostic_msgs
   geometry_msgs
