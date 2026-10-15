@@ -417,8 +417,9 @@ TEST(VisualSparseStereo, RecoversSubPixelDisparity)
     cv::Mat          right;
     makeShiftedStereoPair(TRUE_DISPARITY_PX, left, right);
 
-    std::array<localisation::visual_odometry::feature_tracking::Point2D,
-               localisation::visual_odometry::feature_tracking::
+    std::array<localisation::visual_odometry::feature_tracking::gftt_lk::
+                   Point2D,
+               localisation::visual_odometry::feature_tracking::gftt_lk::
                    MAXIMUM_SUPPORTED_FEATURES>
                 corners{};
     std::size_t cornerCount = 0U;
@@ -433,7 +434,7 @@ TEST(VisualSparseStereo, RecoversSubPixelDisparity)
     }
 
     std::array<float,
-               localisation::visual_odometry::feature_tracking::
+               localisation::visual_odometry::feature_tracking::gftt_lk::
                    MAXIMUM_SUPPORTED_FEATURES>
         disparity{};
     Node::calculateSparseDisparity(left,
@@ -461,14 +462,15 @@ TEST(VisualSparseStereo, RecoversSubPixelDisparity)
 
 TEST(VisualSparseStereo, RejectsTexturelessAndOutOfRangeCorners)
 {
-    std::array<localisation::visual_odometry::feature_tracking::Point2D,
-               localisation::visual_odometry::feature_tracking::
+    std::array<localisation::visual_odometry::feature_tracking::gftt_lk::
+                   Point2D,
+               localisation::visual_odometry::feature_tracking::gftt_lk::
                    MAXIMUM_SUPPORTED_FEATURES>
         corners{};
     corners[0].x = 160.0F;
     corners[0].y = 100.0F;
     std::array<float,
-               localisation::visual_odometry::feature_tracking::
+               localisation::visual_odometry::feature_tracking::gftt_lk::
                    MAXIMUM_SUPPORTED_FEATURES>
         disparity{};
 

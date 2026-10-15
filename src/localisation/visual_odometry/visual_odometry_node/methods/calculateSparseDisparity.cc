@@ -114,20 +114,20 @@ RowMatch findRowMinimum(const cv::Mat &cost_in)
 void VisualOdometryNode::calculateSparseDisparity(
     const cv::Mat                                                  &left_in,
     const cv::Mat                                                  &right_in,
-    const std::array<feature_tracking::Point2D,
-                     feature_tracking::MAXIMUM_SUPPORTED_FEATURES> &corners_in,
+    const std::array<feature_tracking::gftt_lk::Point2D,
+                     feature_tracking::gftt_lk::MAXIMUM_SUPPORTED_FEATURES> &corners_in,
     std::size_t cornerCount_in,
     int         maximumDisparityPx_in,
     int         halfWindowPx_in,
     double      maximumLeftRightDifferencePx_in,
-    std::array<float, feature_tracking::MAXIMUM_SUPPORTED_FEATURES>
+    std::array<float, feature_tracking::gftt_lk::MAXIMUM_SUPPORTED_FEATURES>
         &disparityPx_out)
 {
     disparityPx_out.fill(std::numeric_limits<float>::quiet_NaN());
     const int         halfWindow = halfWindowPx_in;
     const cv::Size    patchSize(2 * halfWindow + 1, 2 * halfWindow + 1);
     const std::size_t cornerCount =
-        std::min(cornerCount_in, feature_tracking::MAXIMUM_SUPPORTED_FEATURES);
+        std::min(cornerCount_in, feature_tracking::gftt_lk::MAXIMUM_SUPPORTED_FEATURES);
 
     cv::Mat patch;
     cv::Mat strip;

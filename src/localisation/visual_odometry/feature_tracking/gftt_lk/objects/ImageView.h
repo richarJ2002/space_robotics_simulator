@@ -14,7 +14,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace localisation::visual_odometry::feature_tracking
+namespace localisation::visual_odometry::feature_tracking::gftt_lk
 {
 
 /*!
@@ -92,6 +92,6 @@ struct ImageView
 };
 // NOLINTEND(misc-non-private-member-variables-in-classes)
 
-} /* namespace localisation::visual_odometry::feature_tracking */
+} /* namespace localisation::visual_odometry::feature_tracking::gftt_lk */
 
 #endif /* SRS_LOCALISATION_FEATURE_TRACKING_IMAGE_VIEW_H */

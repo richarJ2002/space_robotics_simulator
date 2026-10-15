@@ -11,7 +11,7 @@
 /* None */
 
 /* Object Include */
-#include "feature_tracking/objects/ShiTomasiCornerDetector.h"
+#include "feature_tracking/gftt_lk/objects/ShiTomasiCornerDetector.h"
 
 /* Data include */
 /* None */
@@ -19,7 +19,7 @@
 /* Generic Libraries */
 #include <cstddef>
 
-namespace localisation::visual_odometry::feature_tracking
+namespace localisation::visual_odometry::feature_tracking::gftt_lk
 {
 
 namespace
@@ -138,4 +138,4 @@ void ShiTomasiCornerDetector::computeGradients(
     }
 }
 
-} /* namespace localisation::visual_odometry::feature_tracking */
+} /* namespace localisation::visual_odometry::feature_tracking::gftt_lk */

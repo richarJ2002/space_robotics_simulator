@@ -11,7 +11,7 @@
 /* None */
 
 /* Object Include */
-#include "feature_tracking/objects/ShiTomasiCornerDetector.h"
+#include "feature_tracking/gftt_lk/objects/ShiTomasiCornerDetector.h"
 
 /* Data include */
 /* None */
@@ -19,7 +19,7 @@
 /* Generic Libraries */
 /* None */
 
-namespace localisation::visual_odometry::feature_tracking
+namespace localisation::visual_odometry::feature_tracking::gftt_lk
 {
 
 FeatureTrackingStatus ShiTomasiCornerDetector::terminate() noexcept
@@ -54,4 +54,4 @@ FeatureTrackingStatus ShiTomasiCornerDetector::terminate() noexcept
     return FeatureTrackingStatus::FEATURE_TRACKING_STATUS_SUCCESS;
 }
 
-} /* namespace localisation::visual_odometry::feature_tracking */
+} /* namespace localisation::visual_odometry::feature_tracking::gftt_lk */

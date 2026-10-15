@@ -12,7 +12,7 @@
 /* None */
 
 /* Object Include */
-#include "feature_tracking/objects/PyramidalLucasKanadeTracker.h"
+#include "feature_tracking/gftt_lk/objects/PyramidalLucasKanadeTracker.h"
 
 /* Data include */
 /* None */
@@ -22,7 +22,7 @@
 #include <cmath>
 #include <cstddef>
 
-namespace localisation::visual_odometry::feature_tracking
+namespace localisation::visual_odometry::feature_tracking::gftt_lk
 {
 
 /* This function's cognitive-complexity finding is accepted: it is one
@@ -263,4 +263,4 @@ bool PyramidalLucasKanadeTracker::refineFeatureAtLevel(
     return true;
 }
 
-} /* namespace localisation::visual_odometry::feature_tracking */
+} /* namespace localisation::visual_odometry::feature_tracking::gftt_lk */

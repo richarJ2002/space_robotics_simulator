@@ -13,7 +13,7 @@
 /* C++ Standard Library Includes */
 #include <cstddef>
 
-namespace localisation::visual_odometry::feature_tracking
+namespace localisation::visual_odometry::feature_tracking::gftt_lk
 {
 
 /*!
@@ -45,6 +45,6 @@ inline constexpr int MAXIMUM_SUPPORTED_HEIGHT_PX = 4096;
  */
 inline constexpr int MAXIMUM_SUPPORTED_PYRAMID_LEVELS = 8;
 
-} /* namespace localisation::visual_odometry::feature_tracking */
+} /* namespace localisation::visual_odometry::feature_tracking::gftt_lk */
 
 #endif /* SRS_LOCALISATION_FEATURE_TRACKING_LIMITS_H */

@@ -11,7 +11,7 @@
 /* None */
 
 /* Object Include */
-#include "feature_tracking/objects/ShiTomasiCornerDetector.h"
+#include "feature_tracking/gftt_lk/objects/ShiTomasiCornerDetector.h"
 
 /* Data include */
 /* None */
@@ -20,7 +20,7 @@
 #include <cmath>
 #include <cstddef>
 
-namespace localisation::visual_odometry::feature_tracking
+namespace localisation::visual_odometry::feature_tracking::gftt_lk
 {
 
 /* This is an established, tested public API (see
@@ -40,9 +40,9 @@ FeatureTrackingStatus ShiTomasiCornerDetector::initialize(
      * ever touching it, rather than allocating first and discovering the
      * problem later. */
     if (width_in <= 0 ||
-        width_in > feature_tracking::MAXIMUM_SUPPORTED_WIDTH_PX ||
+        width_in > gftt_lk::MAXIMUM_SUPPORTED_WIDTH_PX ||
         height_in <= 0 ||
-        height_in > feature_tracking::MAXIMUM_SUPPORTED_HEIGHT_PX)
+        height_in > gftt_lk::MAXIMUM_SUPPORTED_HEIGHT_PX)
     {
         return FeatureTrackingStatus::
             FEATURE_TRACKING_STATUS_INVALID_CONFIGURATION;
@@ -110,4 +110,4 @@ FeatureTrackingStatus ShiTomasiCornerDetector::initialize(
     return FeatureTrackingStatus::FEATURE_TRACKING_STATUS_SUCCESS;
 }
 
-} /* namespace localisation::visual_odometry::feature_tracking */
+} /* namespace localisation::visual_odometry::feature_tracking::gftt_lk */

@@ -13,7 +13,7 @@
 /* C++ Standard Library Includes */
 #include <cstdint>
 
-namespace localisation::visual_odometry::feature_tracking
+namespace localisation::visual_odometry::feature_tracking::gftt_lk
 {
 
 /*!
@@ -50,6 +50,6 @@ enum class FeatureTrackingStatus : std::uint8_t
     FEATURE_TRACKING_STATUS_INVALID_INPUT = 3U
 };
 
-} /* namespace localisation::visual_odometry::feature_tracking */
+} /* namespace localisation::visual_odometry::feature_tracking::gftt_lk */
 
 #endif /* SRS_LOCALISATION_FEATURE_TRACKING_STATUS_H */

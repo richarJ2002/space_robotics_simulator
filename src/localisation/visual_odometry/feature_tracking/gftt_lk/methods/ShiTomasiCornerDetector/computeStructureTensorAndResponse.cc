@@ -12,7 +12,7 @@
 /* None */
 
 /* Object Include */
-#include "feature_tracking/objects/ShiTomasiCornerDetector.h"
+#include "feature_tracking/gftt_lk/objects/ShiTomasiCornerDetector.h"
 
 /* Data include */
 /* None */
@@ -21,7 +21,7 @@
 #include <cmath>
 #include <cstddef>
 
-namespace localisation::visual_odometry::feature_tracking
+namespace localisation::visual_odometry::feature_tracking::gftt_lk
 {
 
 namespace
@@ -154,4 +154,4 @@ float ShiTomasiCornerDetector::computeStructureTensorAndResponse() noexcept
     return globalMaxResponse;
 }
 
-} /* namespace localisation::visual_odometry::feature_tracking */
+} /* namespace localisation::visual_odometry::feature_tracking::gftt_lk */

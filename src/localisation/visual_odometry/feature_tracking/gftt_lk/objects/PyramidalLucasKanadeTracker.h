@@ -17,12 +17,12 @@
 #include <vector>
 
 /* Object Include */
-#include "feature_tracking/objects/FeatureTrackingLimits.h"
-#include "feature_tracking/objects/FeatureTrackingStatus.h"
-#include "feature_tracking/objects/ImageView.h"
-#include "feature_tracking/objects/Point2D.h"
+#include "feature_tracking/gftt_lk/objects/FeatureTrackingLimits.h"
+#include "feature_tracking/gftt_lk/objects/FeatureTrackingStatus.h"
+#include "feature_tracking/gftt_lk/objects/ImageView.h"
+#include "feature_tracking/gftt_lk/objects/Point2D.h"
 
-namespace localisation::visual_odometry::feature_tracking
+namespace localisation::visual_odometry::feature_tracking::gftt_lk
 {
 
 /*!
@@ -157,15 +157,15 @@ class PyramidalLucasKanadeTracker
     [[nodiscard]] FeatureTrackingStatus track(
         const ImageView &previousImage_in, const ImageView &currentImage_in,
         const std::array<Point2D,
-                         feature_tracking::MAXIMUM_SUPPORTED_FEATURES>
+                         gftt_lk::MAXIMUM_SUPPORTED_FEATURES>
             &previousFeatures_in,
         std::size_t previousFeatureCount_in,
-        std::array<Point2D, feature_tracking::MAXIMUM_SUPPORTED_FEATURES>
+        std::array<Point2D, gftt_lk::MAXIMUM_SUPPORTED_FEATURES>
             &currentFeatures_out,
         std::array<std::uint8_t,
-                   feature_tracking::MAXIMUM_SUPPORTED_FEATURES>
+                   gftt_lk::MAXIMUM_SUPPORTED_FEATURES>
             &trackingStatus_out,
-        std::array<float, feature_tracking::MAXIMUM_SUPPORTED_FEATURES>
+        std::array<float, gftt_lk::MAXIMUM_SUPPORTED_FEATURES>
             &trackingError_out) noexcept;
 
     /*!
@@ -186,14 +186,14 @@ class PyramidalLucasKanadeTracker
      *              sized to this constant.
      */
     static constexpr std::size_t MAXIMUM_SUPPORTED_FEATURES =
-        feature_tracking::MAXIMUM_SUPPORTED_FEATURES;
+        gftt_lk::MAXIMUM_SUPPORTED_FEATURES;
 
     /*!
      * @brief       Upper bound on the number of Gaussian pyramid levels
      *              this tracker may be configured with.
      */
     static constexpr int MAXIMUM_SUPPORTED_PYRAMID_LEVELS =
-        feature_tracking::MAXIMUM_SUPPORTED_PYRAMID_LEVELS;
+        gftt_lk::MAXIMUM_SUPPORTED_PYRAMID_LEVELS;
 
     /*!
      * @brief       Upper bound on the configured tracking window's side
@@ -412,6 +412,6 @@ class PyramidalLucasKanadeTracker
         currentPyramid_{};
 };
 
-} /* namespace localisation::visual_odometry::feature_tracking */
+} /* namespace localisation::visual_odometry::feature_tracking::gftt_lk */
 
 #endif /* SRS_LOCALISATION_PYRAMIDAL_LUCAS_KANADE_TRACKER_H */

@@ -14,11 +14,12 @@
 #include "console/console.h"
 
 /* Object Include */
-#include "feature_tracking/objects/FeatureTrackingStatus.h"
-#include "feature_tracking/objects/ImageView.h"
-#include "feature_tracking/objects/Point2D.h"
-#include "feature_tracking/objects/PyramidalLucasKanadeTracker.h"
-#include "feature_tracking/objects/ShiTomasiCornerDetector.h"
+#include "feature_tracking/gftt_lk/objects/FeatureTrackingStatus.h"
+#include "feature_tracking/gftt_lk/objects/ImageView.h"
+#include "feature_tracking/gftt_lk/objects/Point2D.h"
+#include "feature_tracking/gftt_lk/objects/PyramidalLucasKanadeTracker.h"
+#include "feature_tracking/gftt_lk/objects/ShiTomasiCornerDetector.h"
+#include "feature_tracking/orb_lk/objects/OrbCornerDetector.h"
 
 /* Data include */
 #include <builtin_interfaces/msg/time.hpp>
@@ -435,6 +436,30 @@ class VisualOdometryNode final : public rclcpp::Node
                 "optical_flow_minimum_eigenvalue_threshold",
                 1.0e-4));
 
+        /* Corner-detection front-end: "gftt" runs the dependency-free
+         * Shi-Tomasi detector, "orb" runs the OpenCV ORB detector;
+         * tracking stays pyramidal Lucas-Kanade in both cases. */
+        const std::string featureDetector =
+            declare_parameter<std::string>("feature_detector", "gftt");
+        if (featureDetector != "gftt" && featureDetector != "orb")
+        {
+            throw std::invalid_argument(
+                "feature_detector must be gftt or orb");
+        }
+        isOrbDetector = featureDetector == "orb";
+
+        /* ORB pyramid decimation ratio between levels. */
+        const double orbScaleFactor =
+            declare_parameter<double>("orb_scale_factor", 1.2);
+
+        /* ORB pyramid depth. */
+        const std::int64_t orbLevels =
+            declare_parameter<std::int64_t>("orb_levels", 8);
+
+        /* ORB FAST acceptance threshold. */
+        const std::int64_t orbFastThreshold =
+            declare_parameter<std::int64_t>("orb_fast_threshold", 20);
+
         /* Read the raw disparity-range parameter before rounding it below. */
         std::int64_t numberOfDisparities =
             declare_parameter<std::int64_t>("num_disparities", 128);
@@ -555,21 +580,21 @@ class VisualOdometryNode final : public rclcpp::Node
          * runtime; see `docs/compliance/feature_tracking/` for the
          * applicable coding profile.
          */
-        const feature_tracking::FeatureTrackingStatus cornerDetectorStatus =
+        const feature_tracking::gftt_lk::FeatureTrackingStatus cornerDetectorStatus =
             cornerDetector.initialize(
                 static_cast<int>(imageWidthPx),
                 static_cast<int>(imageHeightPx - detectionMinimumRowPx),
                 static_cast<std::size_t>(maximumFeatures),
                 featureQualityLevel,
                 featureMinimumDistancePx);
-        if (cornerDetectorStatus != feature_tracking::FeatureTrackingStatus::
+        if (cornerDetectorStatus != feature_tracking::gftt_lk::FeatureTrackingStatus::
                                         FEATURE_TRACKING_STATUS_SUCCESS)
         {
             throw std::runtime_error(
                 "ShiTomasiCornerDetector initialization failed");
         }
 
-        const feature_tracking::FeatureTrackingStatus opticalFlowStatus =
+        const feature_tracking::gftt_lk::FeatureTrackingStatus opticalFlowStatus =
             opticalFlowTracker.initialize(
                 static_cast<int>(imageWidthPx),
                 static_cast<int>(imageHeightPx),
@@ -578,11 +603,29 @@ class VisualOdometryNode final : public rclcpp::Node
                 static_cast<int>(opticalFlowMaximumIterations),
                 opticalFlowEpsilonPx,
                 opticalFlowMinimumEigenvalueThreshold);
-        if (opticalFlowStatus != feature_tracking::FeatureTrackingStatus::
+        if (opticalFlowStatus != feature_tracking::gftt_lk::FeatureTrackingStatus::
                                      FEATURE_TRACKING_STATUS_SUCCESS)
         {
             throw std::runtime_error(
                 "PyramidalLucasKanadeTracker initialization failed");
+        }
+
+        /* Initialize the ORB detector alongside the GFTT one so a
+         * misconfiguration fails construction whichever front-end is
+         * selected; only the selected detector runs per frame. */
+        const feature_tracking::gftt_lk::FeatureTrackingStatus orbDetectorStatus =
+            orbCornerDetector.initialize(
+                static_cast<int>(imageWidthPx),
+                static_cast<int>(imageHeightPx - detectionMinimumRowPx),
+                static_cast<std::size_t>(maximumFeatures),
+                orbScaleFactor,
+                static_cast<int>(orbLevels),
+                static_cast<int>(orbFastThreshold));
+        if (orbDetectorStatus != feature_tracking::gftt_lk::FeatureTrackingStatus::
+                                     FEATURE_TRACKING_STATUS_SUCCESS)
+        {
+            throw std::runtime_error(
+                "OrbCornerDetector initialization failed");
         }
 
         /* Publisher for accumulated visual odometry. */
@@ -669,8 +712,8 @@ class VisualOdometryNode final : public rclcpp::Node
     }
 
     /*!
-     * @brief           Terminates both owned feature-tracking engines and
-     *                  logs a failure if that lifecycle transition is
+     * @brief           Terminates all three owned feature-tracking engines
+     *                  and logs a failure if that lifecycle transition is
      *                  rejected.
      */
     // NOLINTNEXTLINE(readability-function-cognitive-complexity)
@@ -681,20 +724,28 @@ class VisualOdometryNode final : public rclcpp::Node
          * initialized in the first place, which cannot happen once the
          * constructor above has completed, but is still reported (not
          * ignored) rather than assumed. */
-        const feature_tracking::FeatureTrackingStatus cornerDetectorStatus =
+        const feature_tracking::gftt_lk::FeatureTrackingStatus cornerDetectorStatus =
             cornerDetector.terminate();
-        if (cornerDetectorStatus != feature_tracking::FeatureTrackingStatus::
+        if (cornerDetectorStatus != feature_tracking::gftt_lk::FeatureTrackingStatus::
                                         FEATURE_TRACKING_STATUS_SUCCESS)
         {
             SRS_LOG_ERROR(get_logger(), "Corner detector termination failed");
         }
 
-        const feature_tracking::FeatureTrackingStatus opticalFlowStatus =
+        const feature_tracking::gftt_lk::FeatureTrackingStatus opticalFlowStatus =
             opticalFlowTracker.terminate();
-        if (opticalFlowStatus != feature_tracking::FeatureTrackingStatus::
+        if (opticalFlowStatus != feature_tracking::gftt_lk::FeatureTrackingStatus::
                                      FEATURE_TRACKING_STATUS_SUCCESS)
         {
             SRS_LOG_ERROR(get_logger(), "LK tracker termination failed");
+        }
+
+        const feature_tracking::gftt_lk::FeatureTrackingStatus orbDetectorStatus =
+            orbCornerDetector.terminate();
+        if (orbDetectorStatus != feature_tracking::gftt_lk::FeatureTrackingStatus::
+                                     FEATURE_TRACKING_STATUS_SUCCESS)
+        {
+            SRS_LOG_ERROR(get_logger(), "ORB detector termination failed");
         }
     }
 
@@ -773,14 +824,14 @@ class VisualOdometryNode final : public rclcpp::Node
     static void calculateSparseDisparity(
         const cv::Mat &left_in,
         const cv::Mat &right_in,
-        const std::array<feature_tracking::Point2D,
-                         feature_tracking::MAXIMUM_SUPPORTED_FEATURES>
+        const std::array<feature_tracking::gftt_lk::Point2D,
+                         feature_tracking::gftt_lk::MAXIMUM_SUPPORTED_FEATURES>
                    &corners_in,
         std::size_t cornerCount_in,
         int         maximumDisparityPx_in,
         int         halfWindowPx_in,
         double      maximumLeftRightDifferencePx_in,
-        std::array<float, feature_tracking::MAXIMUM_SUPPORTED_FEATURES>
+        std::array<float, feature_tracking::gftt_lk::MAXIMUM_SUPPORTED_FEATURES>
             &disparityPx_out);
 
     /*!
@@ -1118,8 +1169,8 @@ class VisualOdometryNode final : public rclcpp::Node
         const cv::Mat                       &left_in,
         const cv::Mat                       &right_in,
         const builtin_interfaces::msg::Time &stamp_in,
-        const std::array<feature_tracking::Point2D,
-                         feature_tracking::MAXIMUM_SUPPORTED_FEATURES>
+        const std::array<feature_tracking::gftt_lk::Point2D,
+                         feature_tracking::gftt_lk::MAXIMUM_SUPPORTED_FEATURES>
                    &corners_in,
         std::size_t cornerCount_in);
 
@@ -1270,7 +1321,7 @@ class VisualOdometryNode final : public rclcpp::Node
      * @frame           N/A
      * @units           N/A
      */
-    feature_tracking::ShiTomasiCornerDetector cornerDetector;
+    feature_tracking::gftt_lk::ShiTomasiCornerDetector cornerDetector;
 
     /*!
      * @brief           Owned, reusable pyramidal Lucas-Kanade optical-flow
@@ -1281,7 +1332,28 @@ class VisualOdometryNode final : public rclcpp::Node
      * @frame           N/A
      * @units           N/A
      */
-    feature_tracking::PyramidalLucasKanadeTracker opticalFlowTracker;
+    feature_tracking::gftt_lk::PyramidalLucasKanadeTracker opticalFlowTracker;
+
+    /*!
+     * @brief           Owned, reusable OpenCV ORB corner detector,
+     *                  initialized once at construction for the fixed
+     *                  LocCam resolution. General robotics profile only;
+     *                  excluded from `docs/compliance/feature_tracking/`.
+     *
+     * @frame           N/A
+     * @units           N/A
+     */
+    feature_tracking::orb_lk::OrbCornerDetector orbCornerDetector;
+
+    /*!
+     * @brief           True to detect corners with the ORB front-end
+     *                  instead of the GFTT one; tracking stays
+     *                  pyramidal Lucas-Kanade in both cases.
+     *
+     * @frame           N/A
+     * @units           N/A
+     */
+    bool isOrbDetector{false};
 
     /*!
      * @brief           Pinhole camera intrinsic matrix shared by both LocCam
@@ -1318,8 +1390,8 @@ class VisualOdometryNode final : public rclcpp::Node
      * @frame           Image
      * @units           pixels
      */
-    std::array<feature_tracking::Point2D,
-               feature_tracking::MAXIMUM_SUPPORTED_FEATURES>
+    std::array<feature_tracking::gftt_lk::Point2D,
+               feature_tracking::gftt_lk::MAXIMUM_SUPPORTED_FEATURES>
         previousKeyframeCorners{};
 
     /*!
@@ -1339,7 +1411,7 @@ class VisualOdometryNode final : public rclcpp::Node
      * @frame           Image
      * @units           pixels
      */
-    std::array<float, feature_tracking::MAXIMUM_SUPPORTED_FEATURES>
+    std::array<float, feature_tracking::gftt_lk::MAXIMUM_SUPPORTED_FEATURES>
         previousKeyframeDisparityPx{};
 
     /*!

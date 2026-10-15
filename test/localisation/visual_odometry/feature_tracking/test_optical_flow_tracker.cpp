@@ -15,18 +15,19 @@
 #include <cstdint>
 #include <vector>
 
-#include "feature_tracking/objects/FeatureTrackingStatus.h"
-#include "feature_tracking/objects/ImageView.h"
-#include "feature_tracking/objects/Point2D.h"
-#include "feature_tracking/objects/PyramidalLucasKanadeTracker.h"
+#include "feature_tracking/gftt_lk/objects/FeatureTrackingStatus.h"
+#include "feature_tracking/gftt_lk/objects/ImageView.h"
+#include "feature_tracking/gftt_lk/objects/Point2D.h"
+#include "feature_tracking/gftt_lk/objects/PyramidalLucasKanadeTracker.h"
 
 namespace
 {
 
-using localisation::visual_odometry::feature_tracking::FeatureTrackingStatus;
-using localisation::visual_odometry::feature_tracking::ImageView;
-using localisation::visual_odometry::feature_tracking::Point2D;
-using localisation::visual_odometry::feature_tracking::
+using localisation::visual_odometry::feature_tracking::gftt_lk::
+    FeatureTrackingStatus;
+using localisation::visual_odometry::feature_tracking::gftt_lk::ImageView;
+using localisation::visual_odometry::feature_tracking::gftt_lk::Point2D;
+using localisation::visual_odometry::feature_tracking::gftt_lk::
     PyramidalLucasKanadeTracker;
 
 constexpr double PI = 3.14159265358979323846;

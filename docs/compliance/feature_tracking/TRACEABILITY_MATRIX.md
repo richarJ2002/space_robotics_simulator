@@ -1,9 +1,17 @@
-# Traceability Matrix — `feature_tracking`
+# Traceability Matrix — `feature_tracking/gftt_lk`
 
 Requirement → design element → test case → status, for the two reusable
 engines this profile covers. Every test name below is a real, currently-
 passing gtest case (verified at the time of writing — see
 `VERIFICATION_REPORT.md` for the actual run output), not a placeholder.
+
+WP06-02 move note: the GFTT design elements below moved unchanged from
+`feature_tracking/objects|methods/` to
+`feature_tracking/gftt_lk/objects|methods/` (namespace
+`localisation::visual_odometry::feature_tracking::gftt_lk`); the mapped test
+cases moved only in `#include`/namespace qualification. The OpenCV ORB
+front-end (`feature_tracking/orb_lk/`, `test_orb_detector.cpp`) is outside
+this profile's scope and adds no rows here.
 
 Legend: **Verified** = a named automated test exercises this exactly.
 **Reviewed** = confirmed by manual code review, not an automated test

@@ -1,4 +1,10 @@
-# Verification Report — `feature_tracking`
+# Verification Report — `feature_tracking/gftt_lk`
+
+WP06-02 note: the engine this report verifies moved unchanged from
+`feature_tracking/objects|methods/` to
+`feature_tracking/gftt_lk/objects|methods/`; re-verification for the move is
+the 3 VO GTests plus `test_orb_detector` in the same change. The history
+below is otherwise untouched.
 
 This report records what was actually run and what actually happened,
 during the session that implemented `feature_tracking/` and integrated it

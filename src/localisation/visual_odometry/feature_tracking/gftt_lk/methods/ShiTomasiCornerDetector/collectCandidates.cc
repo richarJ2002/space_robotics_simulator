@@ -11,7 +11,7 @@
 /* None */
 
 /* Object Include */
-#include "feature_tracking/objects/ShiTomasiCornerDetector.h"
+#include "feature_tracking/gftt_lk/objects/ShiTomasiCornerDetector.h"
 
 /* Data include */
 /* None */
@@ -20,7 +20,7 @@
 #include <algorithm>
 #include <cstddef>
 
-namespace localisation::visual_odometry::feature_tracking
+namespace localisation::visual_odometry::feature_tracking::gftt_lk
 {
 
 /* This function's cognitive-complexity finding is accepted: it is one
@@ -169,4 +169,4 @@ std::size_t ShiTomasiCornerDetector::collectCandidates(
     return count;
 }
 
-} /* namespace localisation::visual_odometry::feature_tracking */
+} /* namespace localisation::visual_odometry::feature_tracking::gftt_lk */

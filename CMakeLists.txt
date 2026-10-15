@@ -8,7 +8,7 @@ project(space_robotics_simulator LANGUAGES CXX)
 # pre-optimized library, so an unoptimized CMAKE_BUILD_TYPE only affected
 # this project's own thin wrapper code around it. That stopped being true
 # once `alpha_feature_tracking` (src/localisation/visual_odometry/
-# feature_tracking/) replaced the OpenCV corner-detection/optical-flow
+# feature_tracking/gftt_lk/) replaced the OpenCV corner-detection/optical-flow
 # calls with equivalent code compiled as part of this project: measured
 # live, an unoptimized build of that engine cannot keep pace with the
 # LocCam sensor's 10 Hz publish rate (per-frame processing regularly

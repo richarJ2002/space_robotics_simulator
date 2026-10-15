@@ -26,8 +26,8 @@ void VisualOdometryNode::storePrevious(
     const cv::Mat                                                  &left_in,
     const cv::Mat                                                  &right_in,
     const builtin_interfaces::msg::Time                            &stamp_in,
-    const std::array<feature_tracking::Point2D,
-                     feature_tracking::MAXIMUM_SUPPORTED_FEATURES> &corners_in,
+    const std::array<feature_tracking::gftt_lk::Point2D,
+                     feature_tracking::gftt_lk::MAXIMUM_SUPPORTED_FEATURES> &corners_in,
     std::size_t cornerCount_in)
 {
     /* Keep the frame's own detections so the next callback tracks them

@@ -16,12 +16,12 @@
 #include <vector>
 
 /* Object Include */
-#include "feature_tracking/objects/FeatureTrackingLimits.h"
-#include "feature_tracking/objects/FeatureTrackingStatus.h"
-#include "feature_tracking/objects/ImageView.h"
-#include "feature_tracking/objects/Point2D.h"
+#include "feature_tracking/gftt_lk/objects/FeatureTrackingLimits.h"
+#include "feature_tracking/gftt_lk/objects/FeatureTrackingStatus.h"
+#include "feature_tracking/gftt_lk/objects/ImageView.h"
+#include "feature_tracking/gftt_lk/objects/Point2D.h"
 
-namespace localisation::visual_odometry::feature_tracking
+namespace localisation::visual_odometry::feature_tracking::gftt_lk
 {
 
 /*!
@@ -124,7 +124,7 @@ class ShiTomasiCornerDetector
      */
     [[nodiscard]] FeatureTrackingStatus detect(
         const ImageView &image_in,
-        std::array<Point2D, feature_tracking::MAXIMUM_SUPPORTED_FEATURES>
+        std::array<Point2D, gftt_lk::MAXIMUM_SUPPORTED_FEATURES>
             &features_out,
         std::size_t &featureCount_out) noexcept;
 
@@ -146,7 +146,7 @@ class ShiTomasiCornerDetector
      *              this constant.
      */
     static constexpr std::size_t MAXIMUM_SUPPORTED_FEATURES =
-        feature_tracking::MAXIMUM_SUPPORTED_FEATURES;
+        gftt_lk::MAXIMUM_SUPPORTED_FEATURES;
 
     /*!
      * @brief       Upper bound on how many local-maxima candidates one
@@ -328,6 +328,6 @@ class ShiTomasiCornerDetector
     std::array<Candidate, MAXIMUM_CANDIDATE_POOL> candidatePool_{};
 };
 
-} /* namespace localisation::visual_odometry::feature_tracking */
+} /* namespace localisation::visual_odometry::feature_tracking::gftt_lk */
 
 #endif /* SRS_LOCALISATION_SHI_TOMASI_CORNER_DETECTOR_H */

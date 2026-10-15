@@ -11,7 +11,7 @@
 /* None */
 
 /* Object Include */
-#include "feature_tracking/objects/PyramidalLucasKanadeTracker.h"
+#include "feature_tracking/gftt_lk/objects/PyramidalLucasKanadeTracker.h"
 
 /* Data include */
 /* None */
@@ -19,7 +19,7 @@
 /* Generic Libraries */
 #include <cstddef>
 
-namespace localisation::visual_odometry::feature_tracking
+namespace localisation::visual_odometry::feature_tracking::gftt_lk
 {
 
 FeatureTrackingStatus PyramidalLucasKanadeTracker::terminate() noexcept
@@ -68,4 +68,4 @@ FeatureTrackingStatus PyramidalLucasKanadeTracker::terminate() noexcept
     return FeatureTrackingStatus::FEATURE_TRACKING_STATUS_SUCCESS;
 }
 
-} /* namespace localisation::visual_odometry::feature_tracking */
+} /* namespace localisation::visual_odometry::feature_tracking::gftt_lk */

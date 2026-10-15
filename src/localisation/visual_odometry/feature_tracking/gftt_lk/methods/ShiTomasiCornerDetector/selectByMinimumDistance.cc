@@ -12,7 +12,7 @@
 /* None */
 
 /* Object Include */
-#include "feature_tracking/objects/ShiTomasiCornerDetector.h"
+#include "feature_tracking/gftt_lk/objects/ShiTomasiCornerDetector.h"
 
 /* Data include */
 /* None */
@@ -22,7 +22,7 @@
 #include <array>
 #include <cstddef>
 
-namespace localisation::visual_odometry::feature_tracking
+namespace localisation::visual_odometry::feature_tracking::gftt_lk
 {
 
 std::size_t ShiTomasiCornerDetector::selectByMinimumDistance(
@@ -116,4 +116,4 @@ std::size_t ShiTomasiCornerDetector::selectByMinimumDistance(
     return acceptedCount;
 }
 
-} /* namespace localisation::visual_odometry::feature_tracking */
+} /* namespace localisation::visual_odometry::feature_tracking::gftt_lk */

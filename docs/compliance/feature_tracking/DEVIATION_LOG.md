@@ -1,7 +1,8 @@
-# Deviation Log — `feature_tracking`
+# Deviation Log — `feature_tracking/gftt_lk`
 
 Every deviation from the raw JSF AV C++ rule set (or from this project's own
-`.clang-tidy` static-analysis baseline) that `feature_tracking/` code takes,
+`.clang-tidy` static-analysis baseline) that `feature_tracking/gftt_lk/`
+code takes,
 recorded per `JSF_AV_CPP_PROFILE_TEMPLATE.md` §7's required fields.
 
 **No deviation here is "approved" merely because it is written down.** Every
@@ -18,7 +19,7 @@ or amend each one.
 
 - **Affected rule:** The entire JSF AV Doc 2RDU00001 Rev C rule set, which
   targets C++03.
-- **Affected scope:** All of `feature_tracking/`.
+- **Affected scope:** All of `feature_tracking/gftt_lk/`.
 - **Technical rationale:** JSF AV Rev C (December 2005) predates C++11/14/17
   entirely — it has no opinion on `enum class`, `[[nodiscard]]`,
   `constexpr`, `std::array`, uniform initialization, or `= delete`d special
@@ -101,7 +102,7 @@ or amend each one.
   `.clang-tidy` deliberately leaves **enabled** rather than
   blanket-disabling — see `.clang-tidy`'s own header comment).
 - **Affected scope:** `ImageView::at(int row_in, int column_in)` — one
-  function, in `feature_tracking/objects/ImageView.h`.
+  function, in `feature_tracking/gftt_lk/objects/ImageView.h`.
 - **Technical rationale:** `at()` is called once per sampled pixel inside
   every hot loop in both engines (Sobel gradients, structure-tensor
   accumulation, bilinear sampling's four corner reads). Every call site is
@@ -292,7 +293,7 @@ or amend each one.
   it deliberately differs from how DEV-FT-003's sibling check
   (`cppcoreguidelines-pro-bounds-pointer-arithmetic`) is treated.
 - **Affected scope:** Every `std::array` index expression across
-  `feature_tracking/` — this check fired ~38 times, on the same
+  `feature_tracking/gftt_lk/` — this check fired ~38 times, on the same
   structural pattern each time: a runtime index into a fixed-size
   `std::array` already bounded by an `initialize()`-time-validated range
   or a fixed loop limit (a pyramid level index, a window offset, a

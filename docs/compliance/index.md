@@ -4,8 +4,9 @@
 > `feature_tracking/` source on `main` win on conflict.
 
 Current scope is narrow: only
-`src/localisation/visual_odometry/feature_tracking/**` under a JSF AV
-Rev C applicability profile.
+`src/localisation/visual_odometry/feature_tracking/gftt_lk/**` under a JSF AV
+Rev C applicability profile (the OpenCV ORB front-end in
+`feature_tracking/orb_lk/` is explicitly excluded).
 
 Status is `PROPOSED`, pending owner sign-off. `TODO(project)` owner and
 approval fields are unresolved, and no deviation is approved merely

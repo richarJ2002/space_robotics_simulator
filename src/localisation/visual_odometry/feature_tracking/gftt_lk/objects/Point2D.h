@@ -10,7 +10,7 @@
 #ifndef SRS_LOCALISATION_FEATURE_TRACKING_POINT_2D_H
 #define SRS_LOCALISATION_FEATURE_TRACKING_POINT_2D_H
 
-namespace localisation::visual_odometry::feature_tracking
+namespace localisation::visual_odometry::feature_tracking::gftt_lk
 {
 
 /*!
@@ -34,6 +34,6 @@ struct Point2D
     float y{0.0F};
 };
 
-} /* namespace localisation::visual_odometry::feature_tracking */
+} /* namespace localisation::visual_odometry::feature_tracking::gftt_lk */
 
 #endif /* SRS_LOCALISATION_FEATURE_TRACKING_POINT_2D_H */

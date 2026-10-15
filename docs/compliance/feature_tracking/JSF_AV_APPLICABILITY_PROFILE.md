@@ -20,12 +20,18 @@ and this file's own Activation Declaration (§9).
 - Effective date: 2026-09-17 (date this profile document and the code it
   governs were completed in this repository).
 - Applicable directories/targets: exactly
-  `src/localisation/visual_odometry/feature_tracking/**`, i.e. the
+  `src/localisation/visual_odometry/feature_tracking/gftt_lk/**`, i.e. the
   `ShiTomasiCornerDetector` and `PyramidalLucasKanadeTracker` classes, their
-  headers under `objects/`, their implementations under `methods/`, and the
-  shared `FeatureTrackingLimits.h`/`FeatureTrackingStatus.h`/`Point2D.h`/
-  `ImageView.h` headers. Built as the `alpha_feature_tracking` CMake STATIC
-  library target.
+  headers under `gftt_lk/objects/`, their implementations under
+  `gftt_lk/methods/`, and the shared `FeatureTrackingLimits.h`/
+  `FeatureTrackingStatus.h`/`Point2D.h`/`ImageView.h` headers. Built as the
+  `alpha_feature_tracking` CMake STATIC library target. (WP06-02 moved these
+  files unchanged from `feature_tracking/objects|methods/` into the
+  `gftt_lk/` subpackage; behavior and guarantees unchanged.)
+- Excluded generated, third-party or test code:
+  - `src/localisation/visual_odometry/feature_tracking/orb_lk/**` (the
+    OpenCV ORB front-end, `alpha_orb_feature_tracking` target; general
+    robotics profile only, not JSF-scoped).
 - Excluded generated, third-party or test code:
   - `VisualOdometryNode.h` and every `src/localisation/visual_odometry/
     visual_odometry_node/methods/*.cc` file (ROS/OpenCV integration layer;
@@ -86,7 +92,7 @@ Conflicts within the scoped path resolve in this order:
 
 ## 4. API and Failure Policy
 
-- Status type and success/failure values: `feature_tracking::
+- Status type and success/failure values: `feature_tracking::gftt_lk::
   FeatureTrackingStatus` (`FeatureTrackingLimits.h`'s sibling header
   `FeatureTrackingStatus.h`), a plain `enum class` with
   `FEATURE_TRACKING_STATUS_SUCCESS`, `_NOT_INITIALIZED`,
@@ -281,7 +287,7 @@ compliance decisions on the project's behalf"), this section is left
 **explicitly pending human sign-off** rather than marked active by the
 agent that wrote it.
 
-- Proposed scope: `src/localisation/visual_odometry/feature_tracking/**`
+- Proposed scope: `src/localisation/visual_odometry/feature_tracking/gftt_lk/**`
   (see §1).
 - Proposed rule revision: JSF AV Doc 2RDU00001 Rev C (see §1), with the
   C++17 mapping and deviations in §7/`DEVIATION_LOG.md`.

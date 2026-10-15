@@ -37,6 +37,7 @@ ament_target_dependencies(visual_odometry
 )
 target_link_libraries(visual_odometry
   alpha_feature_tracking
+  alpha_orb_feature_tracking
   common_console
   common_diagnostics
   ${OpenCV_LIBRARIES}

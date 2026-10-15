@@ -1,4 +1,4 @@
-# Criticality Rationale — `feature_tracking`
+# Criticality Rationale — `feature_tracking/gftt_lk`
 
 ## Up front
 
@@ -33,7 +33,7 @@ here would be a guess, so this document does not attempt it.
 
 ## Category: intentionally unassigned
 
-**No criticality category (A/B/C/D) is assigned to `feature_tracking` in this
+**No criticality category (A/B/C/D) is assigned to `feature_tracking/gftt_lk` in this
 project.** This is the user's explicit, confirmed choice during planning —
 not a gap the agent failed to fill in, and not a default. Assigning a real
 ECSS category requires classifying the *function* this code serves

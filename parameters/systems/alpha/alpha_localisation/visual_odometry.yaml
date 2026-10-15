@@ -17,6 +17,27 @@ visual_odometry:
     block_size: 15
     maximum_features: 640
     minimum_correspondences: 20
+    # Corner-detection front-end (WP06-02): "gftt" runs the
+    # dependency-free Shi-Tomasi detector under
+    # docs/compliance/feature_tracking/, "orb" runs the OpenCV ORB
+    # detector; tracking stays pyramidal Lucas-Kanade in both cases.
+    # Default "gftt" preserves the pre-WP06-02 pipeline exactly.
+    feature_detector: gftt
+    # GFTT baseline anchor (WP06-02 params-only retune): values pin the
+    # long-standing code defaults explicitly so the baseline is visible
+    # in the snapshot; no behaviour change versus the defaults.
+    feature_quality_level: 0.01
+    feature_minimum_distance_px: 8.0
+    optical_flow_maximum_pyramid_level: 3
+    optical_flow_window_size_px: 21
+    optical_flow_maximum_iterations: 30
+    optical_flow_epsilon_px: 0.01
+    optical_flow_minimum_eigenvalue_threshold: 1.0e-4
+    # ORB front-end tuning (OpenCV defaults); used only when
+    # feature_detector is "orb".
+    orb_scale_factor: 1.2
+    orb_levels: 8
+    orb_fast_threshold: 20
     maximum_depth_m: 25.0
     # Stereo depth: "block" reads the dense StereoBM map
     # (num_disparities, block_size), rebuilt for the keyframe pair every

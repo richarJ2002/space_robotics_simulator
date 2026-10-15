@@ -39,11 +39,11 @@ namespace
  * Wraps a single-channel 8-bit `cv::Mat` in a non-owning `ImageView`,
  * honoring OpenCV's own row stride (`step`) rather than assuming a
  * contiguous, unpadded buffer -- this is the boundary conversion
- * `feature_tracking::ImageView`'s own documentation describes.
+ * `feature_tracking::gftt_lk::ImageView`'s own documentation describes.
  */
-feature_tracking::ImageView imageViewFromMat(const cv::Mat &image_in)
+feature_tracking::gftt_lk::ImageView imageViewFromMat(const cv::Mat &image_in)
 {
-    feature_tracking::ImageView view;
+    feature_tracking::gftt_lk::ImageView view;
 
     /* Borrow, never copy, the Mat's own pixel buffer. */
     view.p_pixels = image_in.data;
@@ -64,8 +64,8 @@ feature_tracking::ImageView imageViewFromMat(const cv::Mat &image_in)
  * pipeline (disparity lookup, PnP, visualization) already operates on.
  */
 std::vector<cv::Point2f> toPoint2fVector(
-    const std::array<feature_tracking::Point2D,
-                     feature_tracking::MAXIMUM_SUPPORTED_FEATURES> &points_in,
+    const std::array<feature_tracking::gftt_lk::Point2D,
+                     feature_tracking::gftt_lk::MAXIMUM_SUPPORTED_FEATURES> &points_in,
     std::size_t                                                     count_in)
 {
     std::vector<cv::Point2f> result;
@@ -197,15 +197,16 @@ void VisualOdometryNode::handleStereoCallBack(
 
     /* Detection output: current-frame corner positions, valid only in
      * [0, currentCornerCount). */
-    std::array<feature_tracking::Point2D,
-               feature_tracking::MAXIMUM_SUPPORTED_FEATURES>
+    std::array<feature_tracking::gftt_lk::Point2D,
+               feature_tracking::gftt_lk::MAXIMUM_SUPPORTED_FEATURES>
         currentCorners{};
 
     /* Number of valid entries written to currentCorners. */
     std::size_t currentCornerCount = 0U;
 
     /*!
-     * Detect corner-like features in the CURRENT left image. These are not
+     * Detect corner-like features in the CURRENT left image with the
+     * selected front-end (GFTT or ORB). These are not
      * used this callback; they become "previous frame features" the next
      * time this callback runs, and are also published now purely for visual
      * debugging (blue circles with no track yet). A detection failure here
@@ -216,13 +217,22 @@ void VisualOdometryNode::handleStereoCallBack(
         std::chrono::steady_clock::now();
     /* The detector covers only the band from detectionMinimumRowPx down;
      * shift its rows back into full-image coordinates. */
-    feature_tracking::ImageView detectionBand = imageViewFromMat(currentLeft);
+    feature_tracking::gftt_lk::ImageView detectionBand = imageViewFromMat(currentLeft);
     detectionBand.p_pixels += static_cast<std::size_t>(detectionMinimumRowPx) *
                               detectionBand.strideBytes;
     detectionBand.height -= static_cast<int>(detectionMinimumRowPx);
-    static_cast<void>(cornerDetector.detect(detectionBand,
-                                            currentCorners,
-                                            currentCornerCount));
+    if (isOrbDetector)
+    {
+        static_cast<void>(orbCornerDetector.detect(detectionBand,
+                                                  currentCorners,
+                                                  currentCornerCount));
+    }
+    else
+    {
+        static_cast<void>(cornerDetector.detect(detectionBand,
+                                                currentCorners,
+                                                currentCornerCount));
+    }
     for (std::size_t cornerIndex = 0U; cornerIndex < currentCornerCount; cornerIndex++)
     {
         currentCorners[cornerIndex].y += static_cast<float>(detectionMinimumRowPx);
@@ -377,27 +387,27 @@ void VisualOdometryNode::handleStereoCallBack(
      * reusing them gives exactly what re-detecting on previousLeft would,
      * at half the detection cost.
      */
-    const std::array<feature_tracking::Point2D,
-                     feature_tracking::MAXIMUM_SUPPORTED_FEATURES>
+    const std::array<feature_tracking::gftt_lk::Point2D,
+                     feature_tracking::gftt_lk::MAXIMUM_SUPPORTED_FEATURES>
                      &previousCorners     = previousKeyframeCorners;
     const std::size_t previousCornerCount = previousKeyframeCornerCount;
 
     /* Step 3 output: each previous feature's tracked current-frame
      * position, aligned by index with previousCorners. */
-    std::array<feature_tracking::Point2D,
-               feature_tracking::MAXIMUM_SUPPORTED_FEATURES>
+    std::array<feature_tracking::gftt_lk::Point2D,
+               feature_tracking::gftt_lk::MAXIMUM_SUPPORTED_FEATURES>
         trackedCorners{};
 
     /* Step 3 output: per-feature Lucas-Kanade track success flags,
      * aligned by index with previousCorners. */
-    std::array<std::uint8_t, feature_tracking::MAXIMUM_SUPPORTED_FEATURES>
+    std::array<std::uint8_t, feature_tracking::gftt_lk::MAXIMUM_SUPPORTED_FEATURES>
         trackedStatus{};
 
     /* Step 3 output: per-feature Lucas-Kanade tracking error (mean
      * absolute intensity residual over the tracking window, matching
      * OpenCV's own `calcOpticalFlowPyrLK` error definition), aligned by
      * index with previousCorners. */
-    std::array<float, feature_tracking::MAXIMUM_SUPPORTED_FEATURES>
+    std::array<float, feature_tracking::gftt_lk::MAXIMUM_SUPPORTED_FEATURES>
         trackedError{};
 
     /* Optical flow requires at least one feature to track. */
