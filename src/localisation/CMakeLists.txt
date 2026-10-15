@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 
-add_subdirectory(inertial_odometry)
+add_subdirectory(inertial_averaging)
+add_subdirectory(inertial_odometry_node)
 add_subdirectory(visual_odometry)
 add_subdirectory(wheel_odometry)
 add_subdirectory(kalman_filter)
 add_subdirectory(ground_truth)
+add_subdirectory(keyframe_local_optimization)

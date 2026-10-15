@@ -1,0 +1,40 @@
+# Topic names are not pinned here: each defaults under /<system>/... from
+# the system_name parameter (/alpha/... when system_name is "alpha"), so
+# these tunings apply unchanged under any system's own namespace.
+# Comparison-only sliding-window keyframe Full bundle adjustment
+# (Eigen-only, poses + landmarks): consumes source-agnostic keyframes and
+# publishes /<system>/localisation/keyframe_optimized/{odometry,
+# point_cloud, features}. Never fused, never gates READY, never TF.
+# Proposed starting values (YAML authority): window 5, 10 iterations,
+# Huber on, count trigger, visual input. Board/dataset for the 100 ms
+# budget proof: current dev machine + square bag (see keyframe-ba.md).
+keyframe_local_optimization:
+  ros__parameters:
+    odom_frame: alpha/startup_fixed
+    base_frame: alpha/base_link
+    # Keyframe pose producer: "visual" pairs visual odometry with the
+    # visual cloud; "ekf" is pose-only (cloud sub + ApproximateTime
+    # disabled, input_cloud_topic ignored) until a fused cloud exists.
+    input_source: visual
+    # Optimization trigger: "count" runs when the window fills,
+    # "time" runs every trigger_period_s, "offline-first" never runs.
+    trigger_mode: count
+    trigger_period_s: 1.0
+    # Keyframes retained (1..16, MAX_WINDOW_KEYFRAMES).
+    window_size: 5
+    # Gauss-Newton iterations per optimization (>= 1).
+    max_iterations: 10
+    # Huber robustifier on the 3-D point residuals. WP06-07: delta
+    # tightened 0.05 -> 0.03 m so single-window vertical-drag
+    # outliers (square-bag t~598-609/624 s) lose weight sooner.
+    use_huber: true
+    huber_delta_m: 0.03
+    # Nearest-neighbour association gate in metres. WP06-07:
+    # tightened 0.10 -> 0.05 m: distinct features ~7 cm apart no
+    # longer merge into one landmark. Under-merging degrades to
+    # the visual input, the safe side of the BA <= VO gate.
+    association_gate_m: 0.05
+    # Post-sync age discard in seconds (stale marks pose unavailable).
+    maximum_input_age_s: 0.25
+    # Pairing queue depth per input (mirrors VO image_queue_depth).
+    input_queue_depth: 2

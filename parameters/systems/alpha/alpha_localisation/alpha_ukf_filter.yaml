@@ -1,0 +1,53 @@
+# Topic names are not pinned here: each defaults under /<system>/... from
+# the system_name parameter (/alpha/... when system_name is "alpha"), so
+# these tunings apply unchanged under any system's own namespace.
+# Comparison-only sibling of alpha_kalman_filter.yaml: the UKF fuses the
+# same raw IMU, visual and wheel inputs through an unscented transform and
+# publishes /<system>/localisation/ukf/{odometry,path} (path excluded from
+# recording, like every retained Path). It never broadcasts TF and never
+# gates READY. Sigma-point scaling (sigma_alpha/beta/kappa) is authoritative
+# here: alpha 1.0e-3, beta 2.0 (Gaussian-optimal), kappa 0.0.
+continuous_ukf:
+  ros__parameters:
+    odom_frame: alpha/startup_fixed
+    base_frame: alpha/base_link
+    prediction_rate_hz: 100.0
+    maximum_visual_measurement_age_s: 0.75
+    maximum_wheel_measurement_age_s: 0.75
+    maximum_imu_measurement_age_s: 0.25
+    # Fuse measurements stamped up to this far ahead of the node clock (the
+    # /clock update can arrive a few ms after the measurement; LOC-4).
+    maximum_future_stamp_s: 0.02
+    imu_initialization_samples: 100
+    gravity_mps2: 1.62
+    fuse_visual_pose: true
+    fuse_wheel_twist: true
+    # Zero selects a 99% chi-square gate for each update's active dimension
+    # (visual 6, wheel 3) against the UKF innovation covariance P_yy.
+    visual_nis_threshold: 0.0
+    wheel_nis_threshold: 0.0
+    # Scaled unscented-transform weights; see the YAML header comment.
+    sigma_alpha: 0.001
+    sigma_beta: 2.0
+    sigma_kappa: 0.0
+    accelerometer_noise_variance: 0.0025
+    gyroscope_noise_variance: 0.000064
+    accelerometer_bias_random_walk_variance: 0.000001
+    gyroscope_bias_random_walk_variance: 0.00000001
+    initial_position_variance: 0.01
+    initial_attitude_variance: 0.01
+    initial_velocity_variance: 0.01
+    initial_accelerometer_bias_variance: 0.01
+    initial_gyroscope_bias_variance: 0.001
+    visual_measurement_variance: 0.04
+    visual_attitude_measurement_variance: 0.5
+    # Floor under wheel odometry's reported body-velocity variances, (m/s)^2.
+    wheel_measurement_variance: 0.00025
+    # Ready after IMU initialisation, this many fused visual updates and
+    # this much settling time. Comparison-only: required_components never
+    # lists continuous_ukf, so this status never gates motion. Visual pose
+    # mode keeps position variance bounded, so the limit below always
+    # applies (unlike the EKF's increment mode, which dead-reckons).
+    readiness_minimum_visual_updates: 3
+    readiness_settle_time_s: 5.0
+    readiness_maximum_position_variance_m2: 1.0

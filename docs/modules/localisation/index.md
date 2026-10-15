@@ -21,6 +21,7 @@ of this section's topic wiring — linked here, not duplicated there):
 | `visual_odometry` | `/alpha/drivers/loccam/left`, `/alpha/drivers/loccam/right` | `/alpha/localisation/visual/odometry`, `/alpha/localisation/visual/point_cloud`, `/alpha/localisation/visual/features` |
 | `wheel_odometry` | `/alpha/joint_states`, `/alpha/localisation/visual/odometry`, `/alpha/localisation/kalman_filter/wheel_slip_ratio` | `/alpha/localisation/wheel/odometry`, `/alpha/localisation/wheel/slip_ratios`, `/alpha/localisation/wheel/slip_observation` |
 | `continuous_ekf` (systems, not here) | `/alpha/imu`, visual pose, wheel body velocity | `/alpha/localisation/kalman_filter/odometry` et al. |
+| `continuous_ukf` (systems, comparison-only) | `/alpha/imu`, visual pose, wheel body velocity | `/alpha/localisation/ukf/odometry` |
 | `ground_truth` | `/alpha/drivers/ground_truth/odometry` | `/alpha/localisation/ground_truth/odometry`, `/alpha/localisation/ground_truth/path` |
 
 Conventions: local estimators start at identity in `<system>/startup_fixed`;
@@ -43,9 +44,15 @@ graph LR
 
 - [Ground truth](ground-truth.md) — noise-free comparison path and TF.
 - [Inertial odometry](inertial-odometry.md) — filtered IMU plus standalone
-  integrated pose (not fused).
-- [Visual odometry](visual-odometry.md) — metric stereo VO plus the
-  dependency-free feature-tracking library.
+  integrated pose (not fused), with an opt-in windowed averager
+  (default raw).
+- [Visual odometry](visual-odometry.md) — metric stereo VO (GFTT default,
+  ORB selectable) plus the feature-tracking libraries.
 - [Wheel odometry](wheel-odometry.md) — six-wheel least-squares solve with
   visual slip observation.
-- [Kalman engine](kalman-engine.md) — model-agnostic continuous-discrete EKF.
+- [Kalman engine](kalman-engine.md) — model-agnostic continuous-discrete
+  EKF + UKF engines.
+- [Keyframe bundle adjustment](keyframe-ba.md) — comparison-only
+  sliding-window Full BA (Eigen-only, never fused, never gates READY).
+- [Improvement plan](improvement-plan.md) — UKF, front-end, averager, and
+  keyframe-BA work packages (shipped; see the module pages above).

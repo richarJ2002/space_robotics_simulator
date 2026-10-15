@@ -38,6 +38,8 @@ nav:
           - Visual odometry: modules/localisation/visual-odometry.md
           - Wheel odometry: modules/localisation/wheel-odometry.md
           - Kalman engine: modules/localisation/kalman-engine.md
+          - Keyframe bundle adjustment: modules/localisation/keyframe-ba.md
+          - Improvement plan: modules/localisation/improvement-plan.md
       - Control:
           - Overview: modules/control/index.md
           - Ackermann controller: modules/control/ackermann-controller.md
