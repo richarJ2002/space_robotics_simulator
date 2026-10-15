@@ -29,6 +29,21 @@ No ROS parameters. Gravity is lunar in the SDF; isolation defaults are
 `ROS_DOMAIN_ID=73` and `GZ_PARTITION=space_robotics_simulator_${ROS_DOMAIN_ID}`.
 Use the same values in every terminal.
 
+## Lighting and foreground texture
+
+The terrain GLB carries crater geometry but a single untextured
+material, so the smooth foreground gave the LocCam almost no
+corners. Two mitigations live in the SDF:
+
+- Harsh lunar lighting: low sun elevation for long shadows,
+  near-white diffuse with almost no specular (matte regolith),
+  and very low ambient — lunar shadows are near-black with no
+  atmosphere to scatter fill.
+- A static `foreground_rocks` scatter: 24 small angular rocks
+  (2–10 cm, varied matte-grey diffuse albedos) in the camera's
+  1–6 m foreground, clear of the +X drive corridor, each
+  seated from the mesh surface.
+
 ```mermaid
 graph LR
     sdf[crater_field.sdf] --> gz[Gazebo: gravity + terrain + LocCam]
